@@ -1,34 +1,67 @@
-const { db, query, get } = require('../database/db');
+const { getDb } = require('../database/mongo');
 const LevelUnlockService = require('./LevelUnlockService');
 
 class GenealogyService {
   /**
    * Get direct referrals for a user with investment status and direct business
    */
-  static getDirectReferrals(userId) {
-    return query(`
-      SELECT 
-        u.id, u.user_code, u.username, u.full_name, u.email, u.mobile,
-        u.user_type, u.status, u.created_at,
-        COALESCE(SUM(inv.amount), 0) as total_invested,
-        COUNT(inv.id) as investment_count
-      FROM users u
-      LEFT JOIN investments inv ON inv.user_id = u.id AND inv.status = 'ACTIVE'
-      WHERE u.sponsor_id = ?
-      GROUP BY u.id
-      ORDER BY u.id DESC
-    `, [userId]);
+  static async getDirectReferrals(userId) {
+    const db = getDb();
+    const uid = Number(userId);
+
+    const users = await db.collection('users').find({
+      sponsor_id: uid,
+      status: { $ne: 'DELETED' }
+    }).sort({ id: -1, _id: -1 }).toArray();
+
+    if (users.length === 0) return [];
+
+    const userIds = users.map(u => u.id !== undefined ? u.id : u.sqlite_id).filter(Boolean);
+    const activeInvs = await db.collection('investments').find({
+      user_id: { $in: userIds },
+      status: 'ACTIVE'
+    }).toArray();
+
+    const invMap = {};
+    for (const inv of activeInvs) {
+      const invUid = Number(inv.user_id);
+      if (!invMap[invUid]) {
+        invMap[invUid] = { total: 0, count: 0 };
+      }
+      invMap[invUid].total += Number(inv.amount || 0);
+      invMap[invUid].count += 1;
+    }
+
+    return users.map(u => {
+      const uId = u.id !== undefined ? u.id : u.sqlite_id;
+      const stats = invMap[uId] || { total: 0, count: 0 };
+      return {
+        id: uId,
+        user_code: u.user_code,
+        username: u.username,
+        full_name: u.full_name,
+        email: u.email,
+        mobile: u.mobile,
+        user_type: u.user_type,
+        status: u.status,
+        created_at: u.created_at,
+        total_invested: stats.total,
+        investment_count: stats.count
+      };
+    });
   }
 
   /**
    * Traverse downline levels (up to 20 levels) and compile team metrics
    */
-  static getDownlineSummary(userId) {
-    const unlockStatus = LevelUnlockService.getLevelStatus(userId);
-    const unlockedLevelsCount = unlockStatus.filter(l => l.isUnlocked).length;
+  static async getDownlineSummary(userId) {
+    const db = getDb();
+    const uid = Number(userId);
+    const unlockStatus = await LevelUnlockService.getLevelStatus(uid);
+    const unlockedLevelsCount = Array.isArray(unlockStatus) ? unlockStatus.filter(l => l.isUnlocked).length : 0;
 
     // Breadth-first traversal up to 20 levels
-    let currentLevelUserIds = [userId];
+    let currentLevelUserIds = [uid];
     const levelStats = [];
     let totalTeam = 0;
     let activeTeam = 0;
@@ -37,52 +70,72 @@ class GenealogyService {
     for (let level = 1; level <= 20; level++) {
       if (currentLevelUserIds.length === 0) break;
 
-      const placeholders = currentLevelUserIds.map(() => '?').join(',');
-      const downlineMembers = query(`
-        SELECT 
-          u.id, u.user_code, u.username, u.full_name, u.status, u.user_type,
-          u.sponsor_id, u.created_at,
-          COALESCE(SUM(inv.amount), 0) as total_invested,
-          COUNT(inv.id) as active_investments
-        FROM users u
-        LEFT JOIN investments inv ON inv.user_id = u.id AND inv.status = 'ACTIVE'
-        WHERE u.sponsor_id IN (${placeholders})
-        GROUP BY u.id
-      `, currentLevelUserIds);
+      const downlineUsers = await db.collection('users').find({
+        sponsor_id: { $in: currentLevelUserIds },
+        status: { $ne: 'DELETED' }
+      }).toArray();
 
-      if (downlineMembers.length === 0) break;
+      if (downlineUsers.length === 0) break;
+
+      const downlineIds = downlineUsers.map(u => u.id !== undefined ? u.id : u.sqlite_id).filter(Boolean);
+      const activeInvs = await db.collection('investments').find({
+        user_id: { $in: downlineIds },
+        status: 'ACTIVE'
+      }).toArray();
+
+      const invMap = {};
+      for (const inv of activeInvs) {
+        const invUid = Number(inv.user_id);
+        if (!invMap[invUid]) invMap[invUid] = { total: 0, count: 0 };
+        invMap[invUid].total += Number(inv.amount || 0);
+        invMap[invUid].count += 1;
+      }
 
       let levelActiveCount = 0;
       let levelBusiness = 0;
       const nextLevelIds = [];
+      const formattedMembers = [];
 
-      for (const m of downlineMembers) {
-        nextLevelIds.push(m.id);
-        const invested = Number(m.total_invested || 0);
-        levelBusiness += invested;
-        if (m.status === 'ACTIVE' && Number(m.active_investments) > 0) {
+      for (const u of downlineUsers) {
+        const uId = u.id !== undefined ? u.id : u.sqlite_id;
+        nextLevelIds.push(uId);
+        const stats = invMap[uId] || { total: 0, count: 0 };
+        levelBusiness += stats.total;
+        if (u.status === 'ACTIVE' && stats.count > 0) {
           levelActiveCount++;
         }
+        formattedMembers.push({
+          id: uId,
+          user_code: u.user_code,
+          username: u.username,
+          full_name: u.full_name,
+          status: u.status,
+          user_type: u.user_type,
+          sponsor_id: u.sponsor_id,
+          created_at: u.created_at,
+          total_invested: stats.total,
+          active_investments: stats.count
+        });
       }
 
-      totalTeam += downlineMembers.length;
+      totalTeam += downlineUsers.length;
       activeTeam += levelActiveCount;
       totalTeamBusiness += levelBusiness;
 
       levelStats.push({
         level,
-        count: downlineMembers.length,
+        count: downlineUsers.length,
         activeCount: levelActiveCount,
         business: Number(levelBusiness.toFixed(2)),
         isUnlocked: level <= unlockedLevelsCount,
-        members: downlineMembers.slice(0, 10) // preview first 10
+        members: formattedMembers.slice(0, 10)
       });
 
       currentLevelUserIds = nextLevelIds;
     }
 
     // Direct stats
-    const directs = this.getDirectReferrals(userId);
+    const directs = await this.getDirectReferrals(uid);
     const activeDirects = directs.filter(d => Number(d.total_invested) > 0 && d.status === 'ACTIVE').length;
     const directBusiness = directs.reduce((sum, d) => sum + Number(d.total_invested || 0), 0);
 
@@ -102,22 +155,26 @@ class GenealogyService {
   /**
    * Get tree data formatted for visual interactive tree rendering (depth limited)
    */
-  static getVisualTree(userId, maxDepth = 3) {
-    const rootUser = get(`
-      SELECT 
-        u.id, u.user_code, u.username, u.full_name, u.user_type, u.status,
-        COALESCE(SUM(inv.amount), 0) as total_invested
-      FROM users u
-      LEFT JOIN investments inv ON inv.user_id = u.id AND inv.status = 'ACTIVE'
-      WHERE u.id = ?
-      GROUP BY u.id
-    `, [userId]);
+  static async getVisualTree(userId, maxDepth = 3) {
+    const db = getDb();
+    const uid = Number(userId);
 
-    if (!rootUser) return null;
+    const root = await db.collection('users').findOne({
+      $or: [{ id: uid }, { sqlite_id: uid }]
+    });
+    if (!root) return null;
 
-    function buildBranch(user, currentDepth) {
+    const rootId = root.id !== undefined ? root.id : root.sqlite_id;
+    const rootInvs = await db.collection('investments').find({
+      user_id: rootId,
+      status: 'ACTIVE'
+    }).toArray();
+    const rootInvested = rootInvs.reduce((s, i) => s + Number(i.amount || 0), 0);
+
+    async function buildBranch(user, currentDepth) {
+      const uId = user.id !== undefined ? user.id : user.sqlite_id;
       const node = {
-        id: user.id,
+        id: uId,
         user_code: user.user_code,
         username: user.username,
         full_name: user.full_name,
@@ -129,25 +186,35 @@ class GenealogyService {
 
       if (currentDepth >= maxDepth) return node;
 
-      const children = query(`
-        SELECT 
-          u.id, u.user_code, u.username, u.full_name, u.user_type, u.status,
-          COALESCE(SUM(inv.amount), 0) as total_invested
-        FROM users u
-        LEFT JOIN investments inv ON inv.user_id = u.id AND inv.status = 'ACTIVE'
-        WHERE u.sponsor_id = ?
-        GROUP BY u.id
-        ORDER BY u.id ASC
-      `, [user.id]);
+      const children = await db.collection('users').find({
+        sponsor_id: uId,
+        status: { $ne: 'DELETED' }
+      }).sort({ id: 1 }).toArray();
+
+      if (children.length === 0) return node;
+
+      const childIds = children.map(c => c.id !== undefined ? c.id : c.sqlite_id);
+      const childInvs = await db.collection('investments').find({
+        user_id: { $in: childIds },
+        status: 'ACTIVE'
+      }).toArray();
+
+      const invMap = {};
+      for (const inv of childInvs) {
+        invMap[inv.user_id] = (invMap[inv.user_id] || 0) + Number(inv.amount || 0);
+      }
 
       for (const child of children) {
-        node.children.push(buildBranch(child, currentDepth + 1));
+        const cId = child.id !== undefined ? child.id : child.sqlite_id;
+        child.total_invested = invMap[cId] || 0;
+        node.children.push(await buildBranch(child, currentDepth + 1));
       }
 
       return node;
     }
 
-    return buildBranch(rootUser, 1);
+    root.total_invested = rootInvested;
+    return await buildBranch(root, 1);
   }
 }
 

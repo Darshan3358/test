@@ -456,8 +456,12 @@ class WithdrawalService {
   /**
    * Get user's withdrawal history
    */
-  static getUserWithdrawals(userId) {
-    return query('SELECT * FROM withdrawals WHERE user_id = ? ORDER BY id DESC', [userId]);
+  static async getUserWithdrawals(userId) {
+    const { getDb } = require('../database/mongo');
+    const db = getDb();
+    const uid = Number(userId);
+    const docs = await db.collection('withdrawals').find({ user_id: uid }).sort({ id: -1, _id: -1 }).toArray();
+    return docs.map(d => ({ ...d, id: d.id !== undefined ? d.id : d.sqlite_id }));
   }
 
   /**

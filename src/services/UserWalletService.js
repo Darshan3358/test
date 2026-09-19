@@ -20,18 +20,23 @@ class UserWalletService {
   /**
    * Get the current active verified wallet for a user
    */
-  static getActiveWallet(userId) {
+  static async getActiveWallet(userId) {
     if (!userId) return null;
-    const row = get(`
-      SELECT * FROM user_wallets 
-      WHERE user_id = ? AND is_active = 1 AND is_verified = 1 
-      ORDER BY id DESC LIMIT 1
-    `, [userId]);
+    const { getDb } = require('../database/mongo');
+    const db = getDb();
+    if (!db) return null;
+    const uid = Number(userId);
+
+    const row = await db.collection('user_wallets').findOne({
+      user_id: uid,
+      is_active: 1,
+      is_verified: 1
+    }, { sort: { id: -1, _id: -1 } });
 
     if (!row) return null;
 
     return {
-      id: row.id,
+      id: row.id !== undefined ? row.id : row.sqlite_id,
       userId: row.user_id,
       walletAddress: row.wallet_address,
       normalizedAddress: row.normalized_wallet_address || BLOCKCHAIN_CONFIG.normalizeAddress(row.wallet_address),

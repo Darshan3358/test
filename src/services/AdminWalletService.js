@@ -19,18 +19,12 @@ const adminNonceStore = new Map();
 class AdminWalletService {
   /**
    * Get the single active common FINVORA admin wallet
-   * 1. Dynamic check from database (admin_wallets where is_active = 1)
+   * 1. Check in-memory cache
    * 2. Fallback to process.env (ACTIVE_ADMIN_WALLET / ACTIVE_DEPOSIT_WALLET / ACTIVE_WITHDRAWAL_WALLET)
    */
   static getActiveAdminWallet() {
-    try {
-      const row = get("SELECT wallet_address FROM admin_wallets WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
-      if (row && row.wallet_address) {
-        const normalized = BLOCKCHAIN_CONFIG.normalizeAddress(row.wallet_address);
-        if (normalized) return normalized;
-      }
-    } catch (err) {
-      console.warn('[AdminWalletService] Error querying active admin wallet from DB:', err.message);
+    if (global._finvoraActiveAdminWallet) {
+      return global._finvoraActiveAdminWallet;
     }
 
     const envWallet = (
@@ -41,6 +35,32 @@ class AdminWalletService {
     ).trim();
 
     return BLOCKCHAIN_CONFIG.normalizeAddress(envWallet) || '';
+  }
+
+  /**
+   * Refresh the active admin wallet from MongoDB Atlas
+   */
+  static async refreshActiveAdminWallet() {
+    try {
+      const { getDb } = require('../database/mongo');
+      const db = getDb();
+      if (db) {
+        const row = await db.collection('admin_wallets').findOne(
+          { is_active: 1 },
+          { sort: { id: -1, _id: -1 } }
+        );
+        if (row && row.wallet_address) {
+          const normalized = BLOCKCHAIN_CONFIG.normalizeAddress(row.wallet_address);
+          if (normalized) {
+            global._finvoraActiveAdminWallet = normalized;
+            return normalized;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[AdminWalletService] Error refreshing active admin wallet:', err.message);
+    }
+    return this.getActiveAdminWallet();
   }
 
   /**
