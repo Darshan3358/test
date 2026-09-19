@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/admin-sidebar') %>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <button type="button" class="sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div class="topbar-title">System & MLM Engine Configuration</div>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+
+        <!-- Manual Cron Execution Control Bar -->
+        <div class="card" style="margin-bottom: 2rem; background: var(--grad-card);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.25rem;">Scheduled Cron Jobs (Automated & Manual)</h3>
+              <p class="text-secondary" style="font-size: 0.85rem;">Both crons are strictly idempotent and protected against double execution.</p>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <form action="/SLXadmin/cron/roi" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Run Daily ROI Cron Now
+                </button>
+              </form>
+
+              <form action="/SLXadmin/cron/salary" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-outline btn-sm">
+                  Run Weekly Salary Cron Now
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-bottom: 2rem;">
+          <!-- MLM Rules Editor -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">MLM Compensation Rules</div>
+            </div>
+
+            <form action="/SLXadmin/settings" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+              <div class="grid grid-2">
+                <div class="form-group">
+                  <label class="form-label">Working Multiplier (e.g. 3X)</label>
+                  <input type="number" step="0.1" name="working_multiplier" class="form-input" value="<%= settings.working_multiplier || '3' %>" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Investor Multiplier (e.g. 2X)</label>
+                  <input type="number" step="0.1" name="investor_multiplier" class="form-input" value="<%= settings.investor_multiplier || '2' %>" required>
+                </div>
+              </div>
+
+              <div class="grid grid-2">
+                <div class="form-group">
+                  <label class="form-label">Daily ROI Rate (%)</label>
+                  <input type="number" step="0.1" name="daily_roi_pct" class="form-input" value="<%= settings.daily_roi_pct || '2.0' %>" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Withdrawal Fee (%)</label>
+                  <input type="number" step="0.1" name="withdrawal_fee_pct" class="form-input" value="<%= settings.withdrawal_fee_pct || '10.0' %>" required>
+                </div>
+              </div>
+
+              <div style="background: rgba(13, 108, 159, 0.08); border: 1px solid rgba(13, 108, 159, 0.25); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-weight: 700; color: var(--c-mint); margin-bottom: 0.75rem; display: block;">
+                  One-Time Referral Commission Tiers (5 Levels)
+                </label>
+                <div class="grid grid-3" style="gap: 0.85rem;">
+                  <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <label class="form-label" style="font-size: 0.75rem;">Level 1 (%)</label>
+                    <input type="number" step="0.1" name="referral_level_1_pct" class="form-input" value="<%= settings.referral_level_1_pct || '5.0' %>" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <label class="form-label" style="font-size: 0.75rem;">Level 2 (%)</label>
+                    <input type="number" step="0.1" name="referral_level_2_pct" class="form-input" value="<%= settings.referral_level_2_pct || '2.0' %>" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <label class="form-label" style="font-size: 0.75rem;">Level 3 (%)</label>
+                    <input type="number" step="0.1" name="referral_level_3_pct" class="form-input" value="<%= settings.referral_level_3_pct || '1.0' %>" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <label class="form-label" style="font-size: 0.75rem;">Level 4 (%)</label>
+                    <input type="number" step="0.1" name="referral_level_4_pct" class="form-input" value="<%= settings.referral_level_4_pct || '1.0' %>" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <label class="form-label" style="font-size: 0.75rem;">Level 5 (%)</label>
+                    <input type="number" step="0.1" name="referral_level_5_pct" class="form-input" value="<%= settings.referral_level_5_pct || '1.0' %>" required>
+                  </div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                  One-time payout distributed up to 5 upline generations upon package purchase. Maximum depth = 5 levels.
+                </div>
+              </div>
+
+              <div class="grid grid-2">
+                <div class="form-group">
+                  <label class="form-label">Minimum Withdrawal ($)</label>
+                  <input type="number" step="1" name="min_withdrawal" class="form-input" value="<%= settings.min_withdrawal || '10' %>" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Maximum Withdrawal ($)</label>
+                  <input type="number" step="100" name="max_withdrawal" class="form-input" value="<%= settings.max_withdrawal || '50000' %>" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Income Cap Scope</label>
+                <select name="income_cap_scope" class="form-select">
+                  <option value="ALL" <%= settings.income_cap_scope === 'ALL' ? 'selected' : '' %>>ALL Income (ROI + Referral + Level + Salary)</option>
+                  <option value="ROI_ONLY" <%= settings.income_cap_scope === 'ROI_ONLY' ? 'selected' : '' %>>ROI ONLY</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Platform Maintenance Mode</label>
+                <select name="maintenance_mode" class="form-select">
+                  <option value="0" <%= settings.maintenance_mode === '0' ? 'selected' : '' %>>0 - Live / Normal Operations</option>
+                  <option value="1" <%= settings.maintenance_mode === '1' ? 'selected' : '' %>>1 - Maintenance Active</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">Save MLM Settings</button>
+            </form>
+          </div>
+
+          <!-- Cron Execution History Logs -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Cron Execution Logs</div>
+            </div>
+
+            <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Job Name</th>
+                    <th>Date</th>
+                    <th>Processed</th>
+                    <th>Total Payout</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (cronLogs && cronLogs.length > 0) { %>
+                    <% cronLogs.forEach(cl => { %>
+                      <tr>
+                        <td><strong><%= cl.cron_name %></strong></td>
+                        <td><%= cl.execution_date %></td>
+                        <td><%= cl.processed_count %> Items</td>
+                        <td style="font-weight: 700; color: var(--c-mint);">$<%= Number(cl.total_payout || 0).toFixed(2) %></td>
+                        <td>
+                          <span class="badge <%= cl.status === 'SUCCESS' ? 'badge-success' : 'badge-warning' %>">
+                            <%= cl.status %>
+                          </span>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr><td colspan="5" class="text-secondary" style="text-align: center; padding: 2rem;">No cron runs recorded yet.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

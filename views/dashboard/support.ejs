@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'Support Help Desk' }) %>
+
+      <main class="dashboard-content">
+        <div class="card" style="max-width: 800px; margin: 0 auto; padding: 2.5rem;">
+          <div class="card-header">
+            <div class="card-title">
+              <span>Open Support Ticket</span>
+            </div>
+            <span class="badge badge-success">24/7 Desk Live</span>
+          </div>
+
+          <form onsubmit="event.preventDefault(); alert('Your ticket has been dispatched to FINVORA Priority Desk.');">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select class="form-select">
+                <option>Deposit & Payment Verification</option>
+                <option>Withdrawal Inquiry</option>
+                <option>Genealogy / Downline Inquiry</option>
+                <option>Package / Multiplier Query</option>
+                <option>Other Technical Question</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Subject</label>
+              <input type="text" class="form-input" placeholder="Brief summary of your query" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <textarea class="form-textarea" rows="5" placeholder="Provide full details including transaction IDs if applicable" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Submit Support Ticket</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

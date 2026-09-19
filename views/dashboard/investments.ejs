@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'My Investments' }) %>
+
+      <main class="dashboard-content">
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <!-- Portfolio Overview KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-title">Total Active Capital</div>
+            <div class="kpi-value grad-text">$<%= invSummary.activeInvested.toFixed(2) %> <span style="font-size: 0.9rem; color: var(--text-muted);">USDT</span></div>
+            <div class="kpi-sub"><%= invSummary.activeCount %> active package contracts</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Estimated Daily Yield</div>
+            <div class="kpi-value text-success mono">+$<%= invSummary.estimatedDailyRoi.toFixed(2) %>/day</div>
+            <div class="kpi-sub">2.0% daily automated profit</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Total Profit Earned</div>
+            <% 
+              const totalPackageProfit = investments ? investments.reduce((acc, inv) => acc + Number(inv.profit_amount || 0), 0) : 0;
+            %>
+            <div class="kpi-value text-mint mono">+$<%= totalPackageProfit.toFixed(2) %> <span style="font-size: 0.9rem; color: var(--c-mint);">USDT</span></div>
+            <div class="kpi-sub">Cumulative ROI profit across all packages</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Total Cap Potential</div>
+            <div class="kpi-value mono">$<%= invSummary.totalCap.toFixed(2) %> <span style="font-size: 0.9rem; color: var(--text-muted);">USDT</span></div>
+            <div class="kpi-sub">Cumulative maximum return ceiling</div>
+          </div>
+        </div>
+
+        <!-- Section: Comprehensive Investment Contracts Table -->
+        <div class="card">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+              <span>Package Contracts Ledger</span>
+            </div>
+            <a href="/packages" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+              <span>Buy New Package</span>
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Inv ID</th>
+                  <th>Package</th>
+                  <th>Daily Yield Rate</th>
+                  <th style="color: var(--c-mint);">Profit Amount (ROI)</th>
+                  <th>Cap Multiplier</th>
+                  <th>Cap Ceiling</th>
+                  <th>Cap Progress</th>
+                  <th>Status</th>
+                  <th>Activated</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (investments && investments.length > 0) { %>
+                  <% investments.forEach(inv => { %>
+                    <% 
+                      const progressPct = Math.min(100, Math.round(((Number(inv.total_income_earned || 0)) / Number(inv.max_income_cap)) * 100));
+                      const dailyRate = (Number(inv.amount) * (Number(inv.daily_roi_pct || 2) / 100));
+                    %>
+                    <tr>
+                      <td style="font-family: monospace; color: var(--c-mint); font-weight: 700;">#INV-<%= inv.id %></td>
+                      <td style="font-weight: 700; color: #FFFFFF;">$<%= Number(inv.amount).toFixed(2) %> USDT</td>
+                      <td class="text-success mono">+<%= inv.daily_roi_pct || 2 %>% ($<%= dailyRate.toFixed(2) %>/d)</td>
+                      <td style="font-weight: 800; color: var(--c-mint);" class="mono">+$<%= Number(inv.profit_amount || 0).toFixed(2) %> USDT</td>
+                      <td><span class="badge <%= inv.multiplier === 3 ? 'badge-working' : 'badge-investor' %>"><%= inv.multiplier %>X</span></td>
+                      <td class="mono">$<%= Number(inv.max_income_cap).toFixed(2) %></td>
+                      <td style="min-width: 140px;">
+                        <div style="font-size: 0.75rem; margin-bottom: 0.2rem;" class="mono"><%= progressPct %>%</div>
+                        <div class="progress-container">
+                          <div class="progress-bar-fill" style="width: <%= progressPct %>%;"></div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge <%= inv.status === 'ACTIVE' ? 'badge-success' : 'badge-error' %>">
+                          <%= inv.status %>
+                        </span>
+                      </td>
+                      <td style="font-size: 0.8rem; color: var(--text-muted);"><%= new Date(inv.activated_at).toLocaleDateString() %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2.5rem;">
+                      No investments found. <a href="/packages" style="color: var(--c-mint);">Explore Packages Store</a>
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

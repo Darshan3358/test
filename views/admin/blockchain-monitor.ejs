@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <style>
+    .kpi-mono {
+      font-family: monospace;
+      letter-spacing: 0.5px;
+    }
+    .tab-btn {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: #00F0FF;
+      border-bottom: 2px solid #00F0FF;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/admin-sidebar') %>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <button type="button" class="sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div class="topbar-title">BNB Smart Chain (BEP-20) Single Treasury Control</div>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success" style="margin-bottom: 1.5rem;"><%= success %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger" style="margin-bottom: 1.5rem;"><%= error %></div>
+        <% } %>
+
+        <!-- Top Overview Banner -->
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: var(--radius-sm); padding: 1rem 1.5rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="font-weight: 800; font-size: 1.05rem; color: #FFFFFF; display: flex; align-items: center; gap: 0.5rem;">
+              <span>USDT (BEP-20) Single Admin Wallet Architecture</span>
+              <span class="badge badge-success" style="font-size: 0.7rem;">Chain ID: 56 (BSC)</span>
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">
+              Official USDT Contract: <a href="<%= config.getAddressExplorerUrl(config.CONTRACT_ADDRESS) %>" target="_blank" rel="noopener noreferrer" class="mono text-mint" style="text-decoration: underline;"><%= config.CONTRACT_ADDRESS %> ↗</a>
+            </div>
+          </div>
+          <div style="display: flex; gap: 1.5rem; font-size: 0.85rem;">
+            <div>
+              <span class="text-secondary">Current BSC Block:</span>
+              <strong class="mono text-mint" style="margin-left: 0.35rem;"><%= currentBlock ? '#' + currentBlock.toLocaleString() : 'Connecting...' %></strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-4" style="margin-bottom: 2rem;">
+          <div class="card stat-card">
+            <div class="stat-label">Pending Deposits</div>
+            <div class="stat-value text-mint"><%= kpi.pendingDeposits %></div>
+            <div class="stat-sub">Awaiting On-Chain Confirmation</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Pending Withdrawals</div>
+            <div class="stat-value" style="color: #F59E0B;"><%= kpi.processingWithdrawals %></div>
+            <div class="stat-sub">Requires Admin Approval</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Completed Disbursements</div>
+            <div class="stat-value text-mint"><%= kpi.completedWithdrawals %></div>
+            <div class="stat-sub">Signed & Broadcasted on BSC</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Failed Transactions</div>
+            <div class="stat-value" style="color: <%= kpi.failedTxs > 0 ? '#EF4444' : 'var(--text-muted)' %>;"><%= kpi.failedTxs %></div>
+            <div class="stat-sub">On-Chain Reversions</div>
+          </div>
+        </div>
+
+        <!-- Section 11: Single Active Admin Wallet & Signer Status Cards -->
+        <div class="grid grid-2" style="margin-bottom: 2rem;">
+          <!-- Card 1: Single Active Admin Wallet -->
+          <div class="card" style="background: var(--grad-card);">
+            <div class="card-header">
+              <div class="card-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                <span>Single Active Admin Wallet (Common Treasury)</span>
+              </div>
+              <span class="badge badge-success">DEPOSITS &amp; WITHDRAWALS</span>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>Enforced Single Active Address (Receives Deposits &amp; Funds Withdrawals):</span>
+              <% if (adminWalletStatus && adminWalletStatus.isVerified) { %>
+                <span class="badge badge-success" style="font-size: 0.72rem;">✓ Cryptographically Verified</span>
+              <% } else { %>
+                <span class="badge badge-outline" style="font-size: 0.72rem;">Connected via ENV / DB</span>
+              <% } %>
+            </div>
+            <div id="admin-wallet-address-display" style="background: #080C0D; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem; font-family: monospace; font-size: 0.85rem; color: #00F0FF; word-break: break-all; margin-bottom: 0.75rem;">
+              <%= singleActiveAdminWallet || 'No active wallet connected' %>
+            </div>
+
+            <!-- Live On-chain Balances -->
+            <div style="display: flex; justify-content: space-between; background: rgba(8, 12, 14, 0.75); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.85rem;">
+              <div>
+                <span class="text-secondary">On-Chain USDT:</span>
+                <strong class="text-mint" style="margin-left: 0.3rem;"><%= (walletBalances ? walletBalances.usdt : 0).toFixed(2) %> USDT</strong>
+                <% if ((walletBalances ? walletBalances.usdt : 0) < 50) { %>
+                  <span style="color: #F59E0B; font-size: 0.7rem; margin-left: 0.3rem;">⚠️ Low Balance</span>
+                <% } %>
+              </div>
+              <div>
+                <span class="text-secondary">Gas Reserve (BNB):</span>
+                <strong style="margin-left: 0.3rem; color: <%= (walletBalances && walletBalances.bnb < 0.002) ? '#EF4444' : '#FFFFFF' %>;"><%= (walletBalances ? walletBalances.bnb : 0).toFixed(4) %> BNB</strong>
+                <% if ((walletBalances && walletBalances.bnb < 0.002)) { %>
+                  <span style="color: #EF4444; font-size: 0.7rem; margin-left: 0.3rem;">⚠️ Low Gas</span>
+                <% } %>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-admin-connect-wallet">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span><%= singleActiveAdminWallet ? 'Switch / Reconnect Wallet (Web3)' : 'Connect Admin Wallet (Web3)' %></span>
+              </button>
+              <% if (singleActiveAdminWallet) { %>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-admin-disconnect-wallet">
+                  <span>Disconnect</span>
+                </button>
+                <a href="<%= config.getAddressExplorerUrl(singleActiveAdminWallet) %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <span>View on BscScan ↗</span>
+                </a>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- Card 2: Server-Side Blockchain Signer Status -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span>Administrative Payout Signer Engine</span>
+              </div>
+              <span class="badge <%= signerConfigured ? 'badge-success' : 'badge-warning' %>">
+                <%= signerConfigured ? 'SIGNER ACTIVE' : 'SIGNER NOT CONFIGURED' %>
+              </span>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.35rem;">
+              Server Signer Public Address (from <code>WITHDRAWAL_SIGNER_PRIVATE_KEY</code>):
+            </div>
+            <div style="background: #080C0D; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem; font-family: monospace; font-size: 0.85rem; color: <%= signerConfigured ? '#10B981' : '#F59E0B' %>; word-break: break-all; margin-bottom: 0.75rem;">
+              <%= signerAddress || 'No server private key set. Add WITHDRAWAL_SIGNER_PRIVATE_KEY to server .env.' %>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.75rem;">
+              <% if (signerConfigured) { %>
+                ✓ When an Administrator clicks <strong>Approve & Send</strong> on a pending withdrawal, the server signs and broadcasts the exact net USDT (BEP-20) amount directly to the user's verified wallet.
+              <% } else { %>
+                ⚠️ Server private key is not set. Withdrawals approved in this state will be marked as approved in internal ledger without broadcasting an on-chain BSC transaction.
+              <% } %>
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
+              Security Note: Private keys are strictly stored on the server environment. Keys are never written to database, logs, or sent over HTTP.
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Withdrawals Action Queue -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Pending Withdrawals Awaiting Admin Disbursal</span>
+            </div>
+            <span class="badge badge-warning"><%= (pendingApprovalWithdrawals || []).length %> Pending</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>User</th>
+                  <th>Gross Amount</th>
+                  <th>Fee (10%)</th>
+                  <th>Net Payout</th>
+                  <th>Destination Address (User Verified)</th>
+                  <th>Status</th>
+                  <th>Requested Date</th>
+                  <th>Administrative Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (pendingApprovalWithdrawals && pendingApprovalWithdrawals.length > 0) { %>
+                  <% pendingApprovalWithdrawals.forEach(w => { %>
+                    <tr>
+                      <td class="mono" style="color: #00F0FF; font-weight: 700;"><%= w.withdrawal_code %></td>
+                      <td>
+                        <strong><%= w.username %></strong>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);"><%= w.user_code %></div>
+                      </td>
+                      <td style="font-weight: 700;">$<%= Number(w.requested_amount).toFixed(2) %></td>
+                      <td style="color: #EF4444;">-$<%= Number(w.fee_amount).toFixed(2) %></td>
+                      <td><strong style="color: #10B981; font-size: 1.05rem;">$<%= Number(w.net_amount).toFixed(2) %> USDT</strong></td>
+                      <td class="mono" style="font-size: 0.8rem; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <a href="https://bscscan.com/address/<%= w.account_details %>" target="_blank" rel="noopener noreferrer" style="color: #00F0FF; text-decoration: underline;" title="<%= w.account_details %>">
+                          <%= w.account_details.slice(0, 8) %>...<%= w.account_details.slice(-6) %> ↗
+                        </a>
+                      </td>
+                      <td>
+                        <% 
+                          let bClass = 'badge-warning';
+                          if (w.status === 'REVIEW_REQUIRED') bClass = 'badge-error';
+                        %>
+                        <span class="badge <%= bClass %>"><%= w.status %></span>
+                        <% if (w.status === 'REVIEW_REQUIRED') { %>
+                          <div style="font-size: 0.7rem; color: #EF4444; margin-top: 0.2rem; font-weight: 700;">⚠️ Destination Changed</div>
+                        <% } %>
+                      </td>
+                      <td style="font-size: 0.8rem; color: var(--text-muted);"><%= new Date(w.created_at).toLocaleString() %></td>
+                      <td>
+                        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                          <form action="/SLXadmin/withdrawals/<%= w.id %>/approve" method="POST" onsubmit="return confirm('APPROVE & BROADCAST: Disburse exact <%= Number(w.net_amount).toFixed(2) %> USDT to <%= w.account_details %> on BNB Smart Chain?');">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                              APPROVE & SEND
+                            </button>
+                          </form>
+                          <form action="/SLXadmin/withdrawals/<%= w.id %>/reject" method="POST" onsubmit="return confirm('REJECT: Refund <%= Number(w.requested_amount).toFixed(2) %> USDT back to user profit balance?');">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-outline btn-sm text-error" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                              REJECT
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No pending withdrawal requests requiring disbursal.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tabbed Blockchain Transaction Data Tables -->
+        <div class="card">
+          <div style="display: flex; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.25rem;">
+            <button type="button" class="tab-btn active" onclick="switchTab('tab-deposits', this)">Deposits Ledger</button>
+            <button type="button" class="tab-btn" onclick="switchTab('tab-withdrawals', this)">All Withdrawals</button>
+            <button type="button" class="tab-btn" onclick="switchTab('tab-history', this)">Wallet Audit History</button>
+          </div>
+
+          <!-- Tab 1: Deposits -->
+          <div id="tab-deposits" class="tab-content active">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Tx Hash</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Explorer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (deposits && deposits.length > 0) { %>
+                    <% deposits.forEach(d => { %>
+                      <tr>
+                        <td class="mono text-mint" style="font-weight: 700;"><%= d.deposit_code %></td>
+                        <td>
+                          <strong><%= d.username || 'User #' + d.user_id %></strong>
+                          <div style="font-size: 0.72rem; color: var(--text-muted);"><%= d.user_code || '' %></div>
+                        </td>
+                        <td style="font-weight: 700; color: #FFFFFF;">$<%= Number(d.amount).toFixed(2) %> USDT</td>
+                        <td class="mono" style="font-size: 0.8rem;">
+                          <%= d.transaction_reference ? d.transaction_reference.slice(0, 10) + '...' + d.transaction_reference.slice(-8) : '—' %>
+                        </td>
+                        <td>
+                          <span class="badge <%= d.status === 'APPROVED' ? 'badge-success' : (d.status === 'PENDING' ? 'badge-warning' : 'badge-error') %>">
+                            <%= d.status %>
+                          </span>
+                        </td>
+                        <td style="font-size: 0.78rem; color: var(--text-muted);"><%= new Date(d.created_at).toLocaleString() %></td>
+                        <td>
+                          <% if (d.transaction_reference && d.transaction_reference.startsWith('0x')) { %>
+                            <a href="<%= config.getTxExplorerUrl(d.transaction_reference) %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">
+                              BscScan ↗
+                            </a>
+                          <% } else { %>
+                            &mdash;
+                          <% } %>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr><td colspan="7" class="text-secondary" style="text-align: center; padding: 2rem;">No deposit records found.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Withdrawals -->
+          <div id="tab-withdrawals" class="tab-content">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>User</th>
+                    <th>Gross Amount</th>
+                    <th>Net Disbursed</th>
+                    <th>Destination</th>
+                    <th>Tx Hash</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (withdrawals && withdrawals.length > 0) { %>
+                    <% withdrawals.forEach(w => { %>
+                      <tr>
+                        <td class="mono text-mint" style="font-weight: 700;"><%= w.withdrawal_code %></td>
+                        <td><strong><%= w.username %></strong></td>
+                        <td>$<%= Number(w.requested_amount).toFixed(2) %></td>
+                        <td style="font-weight: 800; color: #10B981;">$<%= Number(w.net_amount).toFixed(2) %> USDT</td>
+                        <td class="mono" style="font-size: 0.8rem;"><%= w.account_details.slice(0, 8) %>...<%= w.account_details.slice(-6) %></td>
+                        <td class="mono" style="font-size: 0.8rem;">
+                          <% if (w.tx_hash) { %>
+                            <a href="<%= config.getTxExplorerUrl(w.tx_hash) %>" target="_blank" rel="noopener noreferrer" style="color: #00F0FF; text-decoration: underline;">
+                              <%= w.tx_hash.slice(0, 8) %>... ↗
+                            </a>
+                          <% } else { %>
+                            &mdash;
+                          <% } %>
+                        </td>
+                        <td>
+                          <span class="badge <%= (w.status === 'COMPLETED' || w.status === 'APPROVED') ? 'badge-success' : 'badge-warning' %>">
+                            <%= w.status %>
+                          </span>
+                        </td>
+                        <td style="font-size: 0.78rem; color: var(--text-muted);"><%= new Date(w.created_at).toLocaleString() %></td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr><td colspan="8" class="text-secondary" style="text-align: center; padding: 2rem;">No withdrawal records found.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 3: Wallet History -->
+          <div id="tab-history" class="tab-content">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Wallet Address</th>
+                    <th>Network</th>
+                    <th>Token</th>
+                    <th>Status</th>
+                    <th>Activated At</th>
+                    <th>Deactivated At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (walletHistory && (walletHistory.active.length > 0 || walletHistory.historical.length > 0)) { %>
+                    <% walletHistory.active.forEach(w => { %>
+                      <tr>
+                        <td><strong>COMMON</strong></td>
+                        <td class="mono text-mint"><%= w.wallet_address %></td>
+                        <td>BSC (56)</td>
+                        <td>USDT</td>
+                        <td><span class="badge badge-success"><%= w.is_active ? 'ACTIVE' : 'INACTIVE' %></span></td>
+                        <td style="font-size: 0.8rem;"><%= new Date(w.created_at).toLocaleString() %></td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);"><%= w.deactivated_at ? new Date(w.deactivated_at).toLocaleString() : 'Current Active' %></td>
+                      </tr>
+                    <% }); %>
+                    <% walletHistory.historical.forEach(h => { %>
+                      <tr>
+                        <td><strong>COMMON</strong></td>
+                        <td class="mono" style="color: var(--text-secondary);"><%= h.wallet_address %></td>
+                        <td>BSC (56)</td>
+                        <td>USDT</td>
+                        <td><span class="badge badge-warning">HISTORICAL</span></td>
+                        <td style="font-size: 0.8rem;"><%= new Date(h.created_at).toLocaleString() %></td>
+                        <td style="font-size: 0.8rem;"><%= new Date(h.deactivated_at).toLocaleString() %></td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr><td colspan="7" class="text-secondary" style="text-align: center; padding: 2rem;">No historical wallet records.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/finvora-web3.js"></script>
+  <script>
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnAdminConnect = document.getElementById('btn-admin-connect-wallet');
+      const btnAdminDisconnect = document.getElementById('btn-admin-disconnect-wallet');
+
+      if (btnAdminConnect) {
+        btnAdminConnect.addEventListener('click', async () => {
+          btnAdminConnect.disabled = true;
+          const origHtml = btnAdminConnect.innerHTML;
+          btnAdminConnect.innerHTML = '<span>Connecting &amp; Verifying...</span>';
+
+          try {
+            const res = await window.finvoraWeb3.connectAndVerify({ role: 'admin' });
+            alert('Admin treasury wallet connected and cryptographically verified!\nActive Wallet: ' + res.account);
+            window.location.reload();
+          } catch (err) {
+            console.error('Admin wallet connection error:', err);
+            alert('Failed to connect admin wallet: ' + (err.message || 'Unknown error'));
+          } finally {
+            btnAdminConnect.disabled = false;
+            btnAdminConnect.innerHTML = origHtml;
+          }
+        });
+      }
+
+      if (btnAdminDisconnect) {
+        btnAdminDisconnect.addEventListener('click', async () => {
+          if (!confirm('Disconnect the active admin wallet from FINVORA?\nThe system will fall back to the environment default until a new wallet is connected.')) {
+            return;
+          }
+          btnAdminDisconnect.disabled = true;
+          try {
+            await window.finvoraWeb3.disconnect({ role: 'admin' });
+            alert('Admin wallet disconnected.');
+            window.location.reload();
+          } catch (err) {
+            alert('Disconnect failed: ' + (err.message || 'Unknown error'));
+            btnAdminDisconnect.disabled = false;
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

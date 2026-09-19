@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'Direct Referrals' }) %>
+
+      <main class="dashboard-content">
+        <% const currentFilter = typeof filter !== 'undefined' ? filter : 'ALL'; %>
+        <!-- Referral Link Share Box (Web3 Wallet-Based) -->
+        <div class="card" style="margin-bottom: 2rem; background: var(--grad-card);">
+          <h2 style="font-size: 1.35rem; margin-bottom: 0.5rem;">Your Affiliate <span class="grad-text">Referral Link</span></h2>
+          <p class="text-secondary" style="font-size: 0.9rem; margin-bottom: 1.25rem;">
+            Share your Web3 wallet referral link with your partners to receive up to 5 levels of one-time referral commissions (5%, 2%, 1%, 1%, 1%) on every package activation, unlock downline ROI levels, and qualify for weekly leadership salaries.
+          </p>
+
+          <!-- When Disconnected -->
+          <div id="referrals-wallet-disconnected" style="<%= (typeof walletAddress !== 'undefined' && walletAddress) ? 'display: none;' : 'display: flex;' %> background: rgba(13, 108, 159, 0.12); border: 1px dashed rgba(87, 193, 157, 0.4); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div>
+              <div style="font-weight: 700; color: #57C19D; font-size: 0.95rem; margin-bottom: 0.25rem;">⚡ Web3 Wallet Required to Generate Referral Link</div>
+              <div class="text-secondary" style="font-size: 0.84rem;">Please connect your Web3 wallet (MetaMask, Trust Wallet, etc.) to activate your referral link: <code><%= (process.env.APP_URL || 'http://localhost:3000') %>/register?ref={Wallet-address}</code></div>
+            </div>
+            <button type="button" class="btn btn-web3-connect btn-md" onclick="window.FinvoraWeb3 ? window.FinvoraWeb3.connect() : null">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-5zm0 0h-4a2 2 0 100 4h4v-4z"/></svg>
+              <span>Connect Wallet</span>
+            </button>
+          </div>
+
+          <!-- When Connected -->
+          <div id="referrals-wallet-connected" style="<%= (typeof walletAddress !== 'undefined' && walletAddress) ? 'display: flex;' : 'display: none;' %> gap: 0.85rem; flex-wrap: wrap; max-width: 840px; align-items: center;">
+            <div style="background: rgba(13, 108, 159, 0.18); border: 1px solid rgba(87, 193, 157, 0.35); border-radius: var(--radius-sm); padding: 0.55rem 1rem; display: flex; flex-direction: column;">
+              <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Referral Wallet Address</span>
+              <span class="mono text-mint" id="referrals-page-wallet-code" style="font-size: 0.95rem; font-weight: 800;" title="<%= typeof walletAddress !== 'undefined' && walletAddress ? walletAddress : '' %>"><%= typeof walletAddress !== 'undefined' && walletAddress ? (walletAddress.slice(0, 8) + '...' + walletAddress.slice(-6)) : '0x...' %></span>
+            </div>
+            <input type="text" id="ref-link-input" class="form-input mono" readonly value="<%= referralLink %>" style="flex: 1; min-width: 320px; font-weight: 600; color: var(--c-mint);">
+            <button type="button" id="btn-copy-ref" class="btn btn-primary" style="padding: 0.65rem 1.25rem;">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+              <span>Copy Link</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Referral KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-title">Total Direct Referrals</div>
+            <div class="kpi-value grad-text"><%= typeof allDirects !== 'undefined' ? allDirects.length : directs.length %></div>
+            <div class="kpi-sub"><%= typeof activeCount !== 'undefined' ? activeCount : downlineSummary.activeDirects %> Active &bull; <%= typeof inactiveCount !== 'undefined' ? inactiveCount : (directs.length - downlineSummary.activeDirects) %> Inactive</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Active Partners</div>
+            <div class="kpi-value text-success"><%= typeof activeCount !== 'undefined' ? activeCount : downlineSummary.activeDirects %></div>
+            <div class="kpi-sub">Funded mining packages</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Direct Business Volume</div>
+            <div class="kpi-value text-mint">$<%= downlineSummary.directBusiness.toFixed(2) %></div>
+            <div class="kpi-sub">Counts toward weekly salary</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Entire Downline Team</div>
+            <div class="kpi-value"><%= downlineSummary.totalTeam %></div>
+            <div class="kpi-sub"><%= downlineSummary.activeTeam %> active across 20 levels</div>
+          </div>
+        </div>
+
+        <!-- Direct Downline Table & Filter -->
+        <div class="card">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div class="card-title">
+              <span>Personally Sponsored Partners</span>
+            </div>
+
+            <!-- Active / Inactive Filter Buttons -->
+            <div style="display: inline-flex; background: rgba(5, 5, 5, 0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.25rem; gap: 0.35rem;">
+              <a href="/my-referrals" class="btn btn-sm <%= currentFilter === 'ALL' ? 'btn-primary' : 'btn-outline' %>" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
+                All (<%= typeof allDirects !== 'undefined' ? allDirects.length : directs.length %>)
+              </a>
+              <a href="/my-referrals?status=ACTIVE" class="btn btn-sm <%= currentFilter === 'ACTIVE' ? 'btn-primary' : 'btn-outline' %>" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
+                Active (<%= typeof activeCount !== 'undefined' ? activeCount : downlineSummary.activeDirects %>)
+              </a>
+              <a href="/my-referrals?status=INACTIVE" class="btn btn-sm <%= currentFilter === 'INACTIVE' ? 'btn-primary' : 'btn-outline' %>" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
+                Inactive (<%= typeof inactiveCount !== 'undefined' ? inactiveCount : 0 %>)
+              </a>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>User Code</th>
+                  <th>Username</th>
+                  <th>Full Name</th>
+                  <th>ID Type</th>
+                  <th>Active Capital</th>
+                  <th>Status</th>
+                  <th>Joined Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (directs && directs.length > 0) { %>
+                  <% directs.forEach(d => { %>
+                    <% 
+                      const isFunded = (d.status === 'ACTIVE' && Number(d.total_invested || 0) > 0);
+                    %>
+                    <tr>
+                      <td style="font-family: monospace; color: var(--c-mint);"><%= d.user_code %></td>
+                      <td><strong><%= d.username %></strong></td>
+                      <td><%= d.full_name %></td>
+                      <td>
+                        <% if (d.user_type === 'WORKING') { %>
+                          <span class="badge badge-working">Working ID</span>
+                        <% } else if (d.user_type === 'INVESTOR') { %>
+                          <span class="badge badge-investor">Investor ID</span>
+                        <% } else if (d.user_type === 'SUSPENDED') { %>
+                          <span class="badge badge-error">Suspended</span>
+                        <% } else { %>
+                          <span class="badge badge-active">Active ID</span>
+                        <% } %>
+                      </td>
+                      <td style="font-weight: 700; color: <%= isFunded ? 'var(--c-mint)' : 'var(--text-muted)' %>;">
+                        $<%= Number(d.total_invested || 0).toFixed(2) %>
+                      </td>
+                      <td>
+                        <% if (isFunded) { %>
+                          <span class="badge badge-success" style="display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 700;">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34D399; box-shadow: 0 0 6px #34D399;"></span>
+                            Active
+                          </span>
+                        <% } else { %>
+                          <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.25); display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600;">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: #F87171;"></span>
+                            Inactive
+                          </span>
+                        <% } %>
+                      </td>
+                      <td style="font-size: 0.8rem; color: var(--text-muted);"><%= new Date(d.created_at).toLocaleDateString() %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2.5rem;">
+                      <% if (currentFilter === 'ACTIVE') { %>
+                        None of your sponsored partners have active investment packages yet.
+                      <% } else if (currentFilter === 'INACTIVE') { %>
+                        No inactive partners found in your direct team.
+                      <% } else { %>
+                        You have not sponsored any partners yet. Share your referral link above to start building your network!
+                      <% } %>
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

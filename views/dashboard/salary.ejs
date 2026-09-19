@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'Leadership Salary Plan' }) %>
+
+      <main class="dashboard-content">
+        <!-- Active Salary Status Card -->
+        <div class="card" style="margin-bottom: 2rem; background: var(--grad-card);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+            <div>
+              <div class="badge badge-success" style="margin-bottom: 0.5rem;">Weekly Leadership Salary</div>
+              <% if (salarySummary.activeSalary) { %>
+                <h2 style="font-size: 1.6rem;">Active Plan: <span class="grad-text"><%= salarySummary.activeSalary.target_name %></span></h2>
+                <div style="font-size: 1.25rem; font-weight: 700; color: var(--c-mint); margin: 0.5rem 0;">
+                  $<%= salarySummary.activeSalary.weekly_amount.toFixed(2) %> / Week
+                </div>
+                <p class="text-secondary" style="font-size: 0.9rem;">
+                  Duration: <%= salarySummary.activeSalary.paid_weeks %> of <%= salarySummary.activeSalary.duration_weeks %> Weeks Completed
+                  &bull; Remaining: <strong><%= salarySummary.activeSalary.duration_weeks - salarySummary.activeSalary.paid_weeks %> Weeks</strong>
+                </p>
+
+                <% const wkPct = Math.min(100, Math.round((salarySummary.activeSalary.paid_weeks / salarySummary.activeSalary.duration_weeks) * 100)); %>
+                <div style="max-width: 450px; margin-top: 0.75rem;">
+                  <div class="progress-container">
+                    <div class="progress-bar-fill" style="width: <%= wkPct %>%;"></div>
+                  </div>
+                </div>
+              <% } else { %>
+                <h2 style="font-size: 1.6rem;">Status: <span class="text-secondary">No Active Salary Level</span></h2>
+                <p class="text-secondary" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                  Current Direct Volume: <strong style="color: var(--c-mint);">$<%= salarySummary.totalBusiness.toFixed(2) %></strong>
+                  &bull; Target 1 Requires: <strong>$1,000.00</strong> direct business
+                </p>
+              <% } %>
+            </div>
+
+            <!-- Next Target Milestone Box -->
+            <div style="background: rgba(12, 17, 18, 0.9); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; min-width: 280px;">
+              <div style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Next Milestone</div>
+              <% if (salarySummary.nextTarget) { %>
+                <div style="font-weight: 700; font-size: 1.1rem; margin: 0.25rem 0;"><%= salarySummary.nextTarget.target_name %></div>
+                <div style="font-size: 0.95rem; color: var(--c-mint); font-weight: 600;">$<%= salarySummary.nextTarget.weekly_amount %>/week for 25 wks</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                  Requires: <strong>$<%= salarySummary.nextTarget.required_direct_business.toLocaleString() %></strong> direct volume
+                </div>
+                <div style="font-size: 0.8rem; color: var(--c-lime); font-weight: 600; margin-top: 0.25rem;">
+                  $<%= salarySummary.additionalRequired.toFixed(2) %> additional needed
+                </div>
+              <% } else { %>
+                <div style="font-weight: 700; color: var(--c-mint); margin-top: 0.25rem;">Top Leadership Tier Reached!</div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Payouts Ledger Table -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <div class="card-title">
+              <span>Weekly Salary Payouts History</span>
+            </div>
+            <span class="badge badge-success">Automated Weekly Cron</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Payout ID</th>
+                  <th>Week Number</th>
+                  <th>Weekly Amount</th>
+                  <th>Payout Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (payouts && payouts.length > 0) { %>
+                  <% payouts.forEach(p => { %>
+                    <tr>
+                      <td style="font-family: monospace; color: var(--c-mint);">#SP-<%= p.id %></td>
+                      <td><strong>Week <%= p.week_number %></strong> / 25</td>
+                      <td style="font-weight: 700; color: var(--c-mint);">+$<%= p.amount.toFixed(2) %></td>
+                      <td><%= p.payout_date %></td>
+                      <td><span class="badge badge-success"><%= p.status %></span></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                      No weekly salary payouts received yet. Qualify for direct business targets to start receiving weekly payments!
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- All 10 Salary Targets Schedule Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>All 10 Salary Target Tiers</span>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tier Name</th>
+                  <th>Required Direct Business</th>
+                  <th>Weekly Salary</th>
+                  <th>Duration</th>
+                  <th>Total Payout</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (salaryTargets && salaryTargets.length > 0) { %>
+                  <% salaryTargets.forEach(st => { %>
+                    <tr>
+                      <td><strong><%= st.target_name %></strong></td>
+                      <td>$<%= st.required_direct_business.toLocaleString() %></td>
+                      <td style="font-weight: 700; color: var(--c-mint);">$<%= st.weekly_amount.toFixed(2) %> / wk</td>
+                      <td><%= st.duration_weeks %> Weeks</td>
+                      <td><strong class="grad-text">$<%= (st.weekly_amount * st.duration_weeks).toLocaleString() %></strong></td>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'Ledger Transactions' }) %>
+
+      <main class="dashboard-content">
+        <!-- Filter Tabs -->
+        <div class="card" style="margin-bottom: 2rem; padding: 1rem 1.5rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <span class="text-secondary" style="font-size: 0.85rem; margin-right: 0.5rem;">Filter by Type:</span>
+            <a href="/transactions" class="btn <%= !selectedType ? 'btn-primary' : 'btn-outline' %> btn-sm">All Transactions</a>
+            <a href="/transactions?type=ROI" class="btn <%= selectedType === 'ROI' ? 'btn-primary' : 'btn-outline' %> btn-sm">ROI Payouts</a>
+            <a href="/transactions?type=REFERRAL_COMMISSION" class="btn <%= selectedType === 'REFERRAL_COMMISSION' ? 'btn-primary' : 'btn-outline' %> btn-sm">Referral (10%)</a>
+            <a href="/transactions?type=LEVEL_COMMISSION" class="btn <%= selectedType === 'LEVEL_COMMISSION' ? 'btn-primary' : 'btn-outline' %> btn-sm">Level Income</a>
+            <a href="/transactions?type=SALARY" class="btn <%= selectedType === 'SALARY' ? 'btn-primary' : 'btn-outline' %> btn-sm">Salary Payouts</a>
+            <a href="/transactions?type=PACKAGE_PURCHASE" class="btn <%= selectedType === 'PACKAGE_PURCHASE' ? 'btn-primary' : 'btn-outline' %> btn-sm">Package Purchases</a>
+            <a href="/transactions?type=DEPOSIT" class="btn <%= selectedType === 'DEPOSIT' ? 'btn-primary' : 'btn-outline' %> btn-sm">Deposits</a>
+            <a href="/transactions?type=WITHDRAWAL" class="btn <%= selectedType === 'WITHDRAWAL' ? 'btn-primary' : 'btn-outline' %> btn-sm">Withdrawals</a>
+          </div>
+        </div>
+
+        <!-- Full Immutable Ledger Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>Immutable Ledger History</span>
+            </div>
+            <span class="badge badge-success">Double-Entry Verified</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tx Code</th>
+                  <th>Transaction Type</th>
+                  <th>Action</th>
+                  <th>Amount</th>
+                  <th>Balance Before</th>
+                  <th>Balance After</th>
+                  <th>Description</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (transactions && transactions.length > 0) { %>
+                  <% transactions.forEach(tx => { 
+                    let typeLabel = tx.transaction_type;
+                    const desc = (tx.description || '').toLowerCase();
+                    if (tx.transaction_type === 'ROI') {
+                      typeLabel = 'ROI Payout';
+                    } else if (tx.transaction_type === 'REFERRAL_COMMISSION') {
+                      typeLabel = 'Referral Commission';
+                    } else if (tx.transaction_type === 'LEVEL_COMMISSION') {
+                      typeLabel = 'Level Commission';
+                    } else if (tx.transaction_type === 'SALARY') {
+                      typeLabel = 'Leadership Salary';
+                    } else if (tx.transaction_type === 'DEPOSIT') {
+                      typeLabel = 'Deposit Capital';
+                    } else if (tx.transaction_type === 'WITHDRAWAL') {
+                      typeLabel = 'Withdrawal';
+                    } else if (tx.transaction_type === 'PACKAGE_PURCHASE') {
+                      typeLabel = 'Package Purchase';
+                    } else if (tx.transaction_type === 'REFUND' || tx.transaction_type === 'TRANSFER') {
+                      if (desc.includes('roi')) {
+                        typeLabel = 'ROI Refund';
+                      } else if (desc.includes('referral')) {
+                        typeLabel = 'Referral Refund';
+                      } else if (desc.includes('level')) {
+                        typeLabel = 'Level Commission Refund';
+                      } else if (desc.includes('salary')) {
+                        typeLabel = 'Salary Refund';
+                      } else if (desc.includes('withdraw')) {
+                        typeLabel = 'Withdrawal Refund';
+                      } else if (desc.includes('deposit')) {
+                        typeLabel = 'Deposit Refund';
+                      } else {
+                        typeLabel = 'Withdrawal Refund';
+                      }
+                    }
+                  %>
+                    <tr>
+                      <td style="font-family: monospace; color: var(--c-mint); font-size: 0.8rem;"><%= tx.transaction_code %></td>
+                      <td><span style="font-weight: 600; color: #FFFFFF;"><%= typeLabel %></span></td>
+                      <td>
+                        <span class="badge <%= tx.action === 'CREDIT' ? 'badge-success' : 'badge-error' %>">
+                          <%= tx.action %>
+                        </span>
+                      </td>
+                      <td style="font-weight: 700; color: <%= tx.action === 'CREDIT' ? 'var(--c-mint)' : 'var(--c-error)' %>;">
+                        <%= tx.action === 'CREDIT' ? '+' : '-' %>$<%= tx.amount.toFixed(2) %>
+                      </td>
+                      <td style="color: var(--text-secondary); font-size: 0.85rem;">$<%= tx.balance_before.toFixed(2) %></td>
+                      <td style="font-weight: 600;">$<%= tx.balance_after.toFixed(2) %></td>
+                      <td style="font-size: 0.85rem; color: var(--text-secondary); max-width: 250px;"><%= tx.description %></td>
+                      <td style="font-size: 0.8rem; color: var(--text-muted);"><%= new Date(tx.created_at).toLocaleString() %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2.5rem;">
+                      No ledger transactions found matching the selected filter.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

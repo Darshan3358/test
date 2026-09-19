@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Credentials
+.env
+.env.local
+.env.production
+
+# Database & SQLite Runtime Files
+data/*.sqlite-shm
+data/*.sqlite-wal
+!data/finvora.sqlite
+*.sqlite
+*.db
+!data/finvora.sqlite
+
+# Logs & Temporary Files
+logs/
+*.log
+npm-debug.log*
+scratch/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    .admin-hero-card {
+      background: linear-gradient(135deg, rgba(13, 108, 159, 0.22) 0%, rgba(12, 17, 19, 0.98) 100%);
+      border: 1px solid rgba(87, 193, 157, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 1.8rem 2.2rem;
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: 1.7fr 0.8fr;
+      align-items: center;
+      gap: 2rem;
+      box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.8), 0 0 30px rgba(55, 165, 161, 0.12);
+      position: relative;
+      overflow: hidden;
+    }
+    @media (max-width: 992px) {
+      .admin-hero-card { grid-template-columns: 1fr; }
+    }
+
+    .admin-canvas-container {
+      width: 100%;
+      height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #three-admin-canvas {
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    .solvency-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    @media (max-width: 768px) {
+      .solvency-bar { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .solvency-item span {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .solvency-item strong {
+      font-size: 1.25rem;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+    }
+
+    .quick-actions-bar {
+      display: flex;
+      gap: 0.85rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/admin-sidebar') %>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <button type="button" class="sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div>
+            <div class="topbar-title">Admin Console</div>
+            <div style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem;">
+              <span class="pulse-dot" style="width: 6px; height: 6px;"></span>
+              <span style="color: var(--c-mint); font-weight: 600;">System Operational</span>
+              <span>&bull;</span>
+              <span class="mono">Protocol v4.2</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <!-- Manual ROI Cron Trigger -->
+          <form action="/SLXadmin/run-roi" method="POST" style="display: inline;" onsubmit="return confirm('Execute immediate daily 2% ROI distribution for today?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-outline btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" title="Triggers the idempotent daily 2% ROI ledger process">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <span>ROI Run (2%)</span>
+            </button>
+          </form>
+
+          <!-- Manual Salary Trigger -->
+          <form action="/SLXadmin/run-salary" method="POST" style="display: inline;" onsubmit="return confirm('Execute weekly leadership salary payout cycle?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-outline btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" title="Processes weekly payouts for active 25-week salary plans">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              <span>Weekly Salary</span>
+            </button>
+          </form>
+
+          <a href="/SLXadmin/settings" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.9rem; font-size: 0.8rem;">
+            <span>MLM Settings</span>
+          </a>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <% 
+          const totalDisbursed = stats.totalRoi + stats.totalReferral + stats.totalLevel + stats.totalSalary;
+          const totalCapital = stats.investments.total_invested_amount || 0;
+          const netProtocolReserve = Math.max(0, totalCapital - totalDisbursed + (stats.withdrawals.total_fees || 0));
+        %>
+
+        <!-- Master Administrative 3D Telemetry Hero Banner -->
+        <div class="admin-hero-card">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem;">
+              <span class="badge badge-working" style="font-size: 0.72rem;">PROTOCOL CONTROLLER v4.2</span>
+              <span class="mono text-mint" style="font-size: 0.8rem;">ACID IMMUTABLE SQLITE (WAL)</span>
+            </div>
+
+            <h2 style="font-size: 2.1rem; font-weight: 800; margin-bottom: 0.4rem;">
+              Protocol Liquidity & <span class="grad-text">Solvency Telemetry</span>
+            </h2>
+            <p class="text-secondary" style="font-size: 0.92rem; line-height: 1.5; max-width: 580px;">
+              Autonomous execution node governing automated 2% daily ROI cycles, Level 1 10% referral disbursements, 20-level ROI-on-ROI overrides, and 25-week leadership salary tiers.
+            </p>
+
+            <div class="solvency-bar">
+              <div class="solvency-item">
+                <span>Total Capital Under Mgmt</span>
+                <strong class="grad-text">$<%= totalCapital.toFixed(2) %></strong>
+              </div>
+              <div class="solvency-item">
+                <span>Cumulative Disbursed</span>
+                <strong class="text-mint">$<%= totalDisbursed.toFixed(2) %></strong>
+              </div>
+              <div class="solvency-item">
+                <span>Net Protocol Reserve</span>
+                <strong class="text-success">$<%= netProtocolReserve.toFixed(2) %></strong>
+              </div>
+              <div class="solvency-item">
+                <span>Withdrawal Fee Pool</span>
+                <strong class="text-cyan">$<%= stats.withdrawals.total_fees.toFixed(2) %></strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3D Three.js Admin Security Master Core -->
+          <div class="admin-canvas-container">
+            <canvas id="three-admin-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- 8 Core Master Admin KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Total Network Users</div>
+              <div class="kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value grad-text mono"><%= stats.users.total_users || 0 %></div>
+            <div class="kpi-sub"><%= stats.users.active_users || 0 %> Active &bull; <%= stats.users.inactive_users || 0 %> Inactive</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Account Classifications</div>
+              <div class="kpi-icon teal">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value mono"><%= stats.users.working_users || 0 %> <span style="font-size: 1.1rem; color: var(--text-secondary); font-weight: 500;">/</span> <%= stats.users.investor_users || 0 %></div>
+            <div class="kpi-sub">Working (3X) vs Investor (2X)</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Total Capital Invested</div>
+              <div class="kpi-icon green">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value text-success mono">$<%= stats.investments.total_invested_amount.toFixed(2) %></div>
+            <div class="kpi-sub"><%= stats.investments.active_investments %> Active Packages</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Today's Daily ROI Payout</div>
+              <div class="kpi-icon lime">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value text-mint mono">+$<%= stats.todayRoi.toFixed(2) %></div>
+            <div class="kpi-sub">Cumulative ROI: $<%= stats.totalRoi.toFixed(2) %></div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Referral Bonuses Paid</div>
+              <div class="kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value mono">$<%= stats.totalReferral.toFixed(2) %></div>
+            <div class="kpi-sub">Level 1 (10%) commissions</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Level Residuals Paid</div>
+              <div class="kpi-icon teal">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value mono">$<%= stats.totalLevel.toFixed(2) %></div>
+            <div class="kpi-sub">20-Tier dynamic unlocks</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Weekly Salaries Paid</div>
+              <div class="kpi-icon green">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value mono">$<%= stats.totalSalary.toFixed(2) %></div>
+            <div class="kpi-sub">25-week leadership program</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">Withdrawal Fees Pool</div>
+              <div class="kpi-icon lime">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+              </div>
+            </div>
+            <div class="kpi-value text-mint mono">$<%= stats.withdrawals.total_fees.toFixed(2) %></div>
+            <div class="kpi-sub">Total Disbursed: $<%= stats.withdrawals.total_paid.toFixed(2) %></div>
+          </div>
+        </div>
+
+        <!-- Pending Approvals Action Deck (Deposits & Withdrawals) -->
+        <div class="grid grid-2" style="margin-bottom: 2rem;">
+          <!-- Pending Deposits -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Pending Deposit Inflows</span>
+                <span class="badge <%= stats.deposits.pending_count > 0 ? 'badge-warning' : 'badge-success' %>" style="margin-left: 0.5rem;">
+                  <%= stats.deposits.pending_count %> Requests ($<%= stats.deposits.total_pending.toFixed(2) %>)
+                </span>
+              </div>
+              <a href="/SLXadmin/deposits" class="btn btn-outline btn-sm">Manage All</a>
+            </div>
+
+            <% if (pendingDeposits && pendingDeposits.length > 0) { %>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Amount</th>
+                      <th>Method</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% pendingDeposits.forEach(d => { %>
+                      <tr>
+                        <td>
+                          <strong><%= d.username %></strong>
+                          <div class="mono" style="font-size: 0.75rem; color: var(--c-mint);"><%= d.user_code %></div>
+                        </td>
+                        <td class="mono" style="font-weight: 700; color: var(--c-mint);">$<%= d.amount.toFixed(2) %></td>
+                        <td><span class="badge badge-success" style="font-size: 0.7rem;"><%= d.payment_method === 'USDT_BEP20' ? 'USDT (BEP-20)' : d.payment_method %></span></td>
+                        <td>
+                          <form action="/SLXadmin/deposits/<%= d.id %>/approve" method="POST" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">Approve Credit</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-secondary);">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin: 0 auto 0.5rem; color: var(--c-mint);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p style="font-size: 0.9rem;">Zero pending deposit requests. Inflow queue is cleared.</p>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Pending Withdrawals -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Pending Payout Requests</span>
+                <span class="badge <%= stats.withdrawals.pending_count > 0 ? 'badge-warning' : 'badge-success' %>" style="margin-left: 0.5rem;">
+                  <%= stats.withdrawals.pending_count %> Requests ($<%= stats.withdrawals.pending_amount.toFixed(2) %>)
+                </span>
+              </div>
+              <a href="/SLXadmin/withdrawals" class="btn btn-outline btn-sm">Manage All</a>
+            </div>
+
+            <% if (pendingWithdrawals && pendingWithdrawals.length > 0) { %>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Net Payout</th>
+                      <th>Fee (10%)</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% pendingWithdrawals.forEach(w => { %>
+                      <tr>
+                        <td>
+                          <strong><%= w.username %></strong>
+                          <div class="mono" style="font-size: 0.75rem; color: var(--c-mint);"><%= w.user_code %></div>
+                        </td>
+                        <td class="mono" style="font-weight: 700; color: var(--c-mint);">$<%= w.net_amount.toFixed(2) %></td>
+                        <td class="mono" style="color: var(--text-muted);">$<%= w.fee_amount.toFixed(2) %></td>
+                        <td>
+                          <form action="/SLXadmin/withdrawals/<%= w.id %>/approve" method="POST" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">Disburse</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-secondary);">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin: 0 auto 0.5rem; color: var(--c-mint);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p style="font-size: 0.9rem;">Zero pending withdrawal requests. Payout queue is cleared.</p>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Recent Registered Network Users Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+              <span>Recently Registered Network Nodes</span>
+            </div>
+            <a href="/SLXadmin/users" class="btn btn-outline btn-sm">Explore User Registry</a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>User Code</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Classification</th>
+                  <th>Active Capital</th>
+                  <th>Status</th>
+                  <th>Registration Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (recentUsers && recentUsers.length > 0) { %>
+                  <% recentUsers.forEach(u => { %>
+                    <tr>
+                      <td class="mono" style="font-size: 0.8rem; color: var(--c-mint);"><%= u.user_code %></td>
+                      <td><strong><%= u.username %></strong></td>
+                      <td style="color: var(--text-secondary);"><%= u.email %></td>
+                      <td>
+                        <% if (u.user_type === 'WORKING') { %>
+                          <span class="badge badge-working">Working ID</span>
+                        <% } else if (u.user_type === 'INVESTOR') { %>
+                          <span class="badge badge-investor">Investor ID</span>
+                        <% } else if (u.user_type === 'SUSPENDED') { %>
+                          <span class="badge badge-error">Suspended</span>
+                        <% } else { %>
+                          <span class="badge badge-active">Active ID</span>
+                        <% } %>
+                      </td>
+                      <td class="mono" style="font-weight: 700; color: #FFFFFF;">$<%= Number(u.invested || 0).toFixed(2) %></td>
+                      <td>
+                        <span class="badge <%= u.status === 'ACTIVE' ? 'badge-success' : 'badge-error' %>">
+                          <%= u.status %>
+                        </span>
+                      </td>
+                      <td style="font-size: 0.8rem; color: var(--text-muted);"><%= new Date(u.created_at).toLocaleDateString() %></td>
+                      <td>
+                        <a href="/SLXadmin/users/<%= u.id %>" class="btn btn-outline btn-sm" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">Manage Details</a>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No users found in database.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/three-scene.js"></script>
+</body>
+</html>

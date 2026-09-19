@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/admin-sidebar') %>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <button type="button" class="sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div class="topbar-title">Packages & Multipliers Management</div>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <div class="alert alert-info">
+          <strong>Notice:</strong> The source plan contains <code>TH/S4</code> twice ($500 and $1,000). Both are fully supported with configurable package codes so you can adjust names and codes at any time.
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <div class="card-title">Active Platform Packages</div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Package Name</th>
+                  <th>Configurable Code</th>
+                  <th>Price ($ USD)</th>
+                  <th>Daily ROI (%)</th>
+                  <th>Max Multiplier</th>
+                  <th>Status</th>
+                  <th>Edit / Save</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (packages && packages.length > 0) { %>
+                  <% packages.forEach(pkg => { %>
+                    <tr>
+                      <form action="/SLXadmin/packages" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="id" value="<%= pkg.id %>">
+                        <td style="font-family: monospace; color: var(--c-mint);">#<%= pkg.id %></td>
+                        <td>
+                          <input type="text" name="name" class="form-input" value="<%= pkg.name %>" style="min-width: 110px;" required>
+                        </td>
+                        <td>
+                          <input type="text" name="code" class="form-input" value="<%= pkg.code %>" style="min-width: 140px;" required>
+                        </td>
+                        <td>
+                          <input type="number" step="1" name="price" class="form-input" value="<%= pkg.price %>" style="width: 100px;" required>
+                        </td>
+                        <td>
+                          <input type="number" step="0.1" name="dailyRoiPct" class="form-input" value="<%= pkg.daily_roi_pct %>" style="width: 80px;" required>
+                        </td>
+                        <td>
+                          <input type="number" step="0.5" name="maxMultiplier" class="form-input" value="<%= pkg.max_multiplier %>" style="width: 80px;" required>
+                        </td>
+                        <td>
+                          <select name="status" class="form-select" style="width: 110px;">
+                            <option value="ACTIVE" <%= pkg.status === 'ACTIVE' ? 'selected' : '' %>>ACTIVE</option>
+                            <option value="INACTIVE" <%= pkg.status === 'INACTIVE' ? 'selected' : '' %>>INACTIVE</option>
+                          </select>
+                        </td>
+                        <td>
+                          <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                        </td>
+                      </form>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add New Package Form -->
+        <div class="card" style="max-width: 700px;">
+          <div class="card-header">
+            <div class="card-title">Create New Package Tier</div>
+          </div>
+
+          <form action="/SLXadmin/packages" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label class="form-label">Package Display Name</label>
+                <input type="text" name="name" class="form-input" placeholder="e.g. TH/S5" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Package Code</label>
+                <input type="text" name="code" class="form-input" placeholder="e.g. TH_S5_2500" required>
+              </div>
+            </div>
+
+            <div class="grid grid-3">
+              <div class="form-group">
+                <label class="form-label">Price ($ USD)</label>
+                <input type="number" step="1" name="price" class="form-input" placeholder="2500" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Daily ROI %</label>
+                <input type="number" step="0.1" name="dailyRoiPct" class="form-input" value="2.0" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Max Multiplier</label>
+                <input type="number" step="0.5" name="maxMultiplier" class="form-input" value="3.0" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create Package Tier</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

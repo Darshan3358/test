@@ -1,0 +1,39 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 4rem 1.5rem 6rem; max-width: 800px;">
+  <div class="section-header" style="margin-bottom: 3.5rem;">
+    <div class="badge badge-success" style="margin-bottom: 0.75rem;">Get in Touch</div>
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">Contact <span class="grad-text">FINVORA</span> Support</h1>
+    <p class="text-secondary" style="font-size: 1.1rem;">
+      Our 24/7 client relations team is ready to assist you.
+    </p>
+  </div>
+
+  <div class="card" style="padding: 2.5rem;">
+    <form onsubmit="event.preventDefault(); alert('Your message has been dispatched to FINVORA Priority Support.');">
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="form-input" placeholder="e.g. John Doe" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="name@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input type="text" class="form-input" placeholder="Account, Withdrawal, or Network Query" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" rows="5" placeholder="How can our financial desk help you today?" required></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block">Send Support Ticket</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

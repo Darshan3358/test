@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/admin-sidebar') %>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <button type="button" class="sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div class="topbar-title">User Profile: <%= targetUser.username %> (<%= targetUser.user_code %>)</div>
+        </div>
+        <div class="topbar-actions">
+          <a href="/SLXadmin/users" class="btn btn-outline btn-sm">&larr; Back to Directory</a>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <!-- User KPI Summary -->
+        <div class="kpi-grid" style="margin-bottom: 2rem;">
+          <div class="kpi-card">
+            <div class="kpi-title">Total Wallet Balance</div>
+            <div class="kpi-value grad-text">$<%= wallet.total_balance.toFixed(2) %></div>
+            <div class="kpi-sub">Main Wallet: $<%= wallet.main_balance.toFixed(2) %></div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">ROI Wallet</div>
+            <div class="kpi-value">$<%= wallet.roi_balance.toFixed(2) %></div>
+            <div class="kpi-sub">Daily 2% profit balance</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Affiliate & Salary Wallets</div>
+            <div class="kpi-value">$<%= (wallet.referral_balance + wallet.level_balance + wallet.salary_balance).toFixed(2) %></div>
+            <div class="kpi-sub">Ref: $<%= wallet.referral_balance.toFixed(2) %> &bull; Lvl: $<%= wallet.level_balance.toFixed(2) %></div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-title">Active Investments</div>
+            <div class="kpi-value"><%= investments.filter(i => i.status === 'ACTIVE').length %> Packages</div>
+            <div class="kpi-sub">Total Invested: $<%= investments.reduce((s, i) => s + (i.status === 'ACTIVE' ? i.amount : 0), 0).toFixed(2) %></div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-bottom: 2rem;">
+          <!-- User Details Form -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Account Details & Control</div>
+              <span class="badge <%= targetUser.status === 'ACTIVE' ? 'badge-success' : 'badge-error' %>"><%= targetUser.status %></span>
+            </div>
+
+            <form action="/SLXadmin/users/<%= targetUser.id %>" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-input" value="<%= targetUser.full_name %>" readonly>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-input" value="<%= targetUser.email %>" readonly>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Sponsor</label>
+                <input type="text" class="form-input" value="<%= targetUser.sponsor_username ? '@' + targetUser.sponsor_username + ' (' + targetUser.sponsor_code + ')' : 'None (Root Master)' %>" readonly>
+              </div>
+
+              <div class="grid grid-2">
+                <div class="form-group">
+                  <label class="form-label">Account Status</label>
+                  <select name="status" class="form-select">
+                    <option value="ACTIVE" <%= targetUser.status === 'ACTIVE' ? 'selected' : '' %>>Active</option>
+                    <option value="SUSPENDED" <%= targetUser.status === 'SUSPENDED' ? 'selected' : '' %>>Suspended</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Classification / ID Type</label>
+                  <select name="userType" class="form-select">
+                    <option value="ACTIVE" <%= targetUser.user_type === 'ACTIVE' ? 'selected' : '' %>>Active ID</option>
+                    <option value="INVESTOR" <%= targetUser.user_type === 'INVESTOR' ? 'selected' : '' %>>Investor ID (2X Cap)</option>
+                    <option value="WORKING" <%= targetUser.user_type === 'WORKING' ? 'selected' : '' %>>Working ID (3X Cap)</option>
+                    <option value="SUSPENDED" <%= targetUser.user_type === 'SUSPENDED' ? 'selected' : '' %>>Suspended ID</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Reset Password (Leave blank to keep current)</label>
+                <input type="password" name="newPassword" class="form-input" placeholder="Enter new password (min 6 chars)">
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">Save Administrative Changes</button>
+            </form>
+          </div>
+
+          <!-- Direct Downline List -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Personally Sponsored (<%= directReferrals.length %>)</div>
+            </div>
+
+            <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Code</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (directReferrals && directReferrals.length > 0) { %>
+                    <% directReferrals.forEach(dr => { %>
+                      <tr>
+                        <td><strong><%= dr.username %></strong></td>
+                        <td><%= dr.user_code %></td>
+                        <td><span class="badge <%= dr.status === 'ACTIVE' ? 'badge-success' : 'badge-error' %>"><%= dr.status %></span></td>
+                        <td>
+                          <a href="/SLXadmin/users/<%= dr.id %>" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">View</a>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr><td colspan="4" class="text-secondary" style="text-align: center; padding: 2rem;">No direct referrals.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Investments by this user -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Investments Held By This User</div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Package Name</th>
+                  <th>Amount</th>
+                  <th>Multiplier</th>
+                  <th>Max Cap</th>
+                  <th>Total Earned</th>
+                  <th>Status</th>
+                  <th>Activated</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (investments && investments.length > 0) { %>
+                  <% investments.forEach(inv => { %>
+                    <tr>
+                      <td style="font-family: monospace; color: var(--c-mint);">#INV-<%= inv.id %></td>
+                      <td><strong><%= inv.package_name %></strong> (<%= inv.package_code %>)</td>
+                      <td style="font-weight: 700;">$<%= inv.amount.toFixed(2) %></td>
+                      <td><%= inv.multiplier %>X</td>
+                      <td>$<%= inv.max_income_cap.toFixed(2) %></td>
+                      <td style="font-weight: 700; color: var(--c-mint);">$<%= (inv.total_income_earned || 0).toFixed(2) %></td>
+                      <td><span class="badge <%= inv.status === 'ACTIVE' ? 'badge-success' : 'badge-error' %>"><%= inv.status %></span></td>
+                      <td><%= new Date(inv.activated_at).toLocaleDateString() %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="8" class="text-secondary" style="text-align: center; padding: 2rem;">No investments held by this user.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

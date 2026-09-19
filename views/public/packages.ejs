@@ -1,0 +1,146 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 4rem 1.5rem 6rem;">
+  <!-- Section Header -->
+  <div class="section-header" style="margin-bottom: 3rem; text-align: center;">
+    <div class="badge badge-success" style="margin-bottom: 0.75rem;">Institutional Mining Yield Tiers</div>
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">Investment <span class="grad-text">Packages</span></h1>
+    <p class="text-secondary" style="font-size: 1.1rem; max-width: 680px; margin: 0 auto;">
+      Choose from our institutional capital allocation contracts offering automated 2.0% daily yields, 5-level referral commissions, and up to 20 levels of team ROI residuals.
+    </p>
+  </div>
+
+  <!-- Package Filter Bar (Matching Internal Dashboard Store) -->
+  <div class="package-filter-bar" style="display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 2.5rem; flex-wrap: wrap;">
+    <button type="button" class="filter-btn active" data-filter="all" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--c-mint); color: #000;">All Packages (<%= typeof packages !== 'undefined' ? packages.length : 0 %>)</button>
+    <button type="button" class="filter-btn" data-filter="starter" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #0c1214; color: var(--text-secondary);">Starter Tier ($50 - $250)</button>
+    <button type="button" class="filter-btn" data-filter="pro" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #0c1214; color: var(--text-secondary);">Pro Tier ($500 - $1,000)</button>
+    <button type="button" class="filter-btn" data-filter="institutional" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #0c1214; color: var(--text-secondary);">Institutional ($2,500+)</button>
+  </div>
+
+  <!-- Packages Showcase Grid -->
+  <div class="grid grid-4" id="packages-grid" style="gap: 1.5rem;">
+    <% if (typeof packages !== 'undefined' && packages.length > 0) { %>
+      <% packages.forEach((pkg, index) => { %>
+        <% 
+          const isPopular = (pkg.price === 500 || pkg.price === 1000);
+          const dailyEarn = pkg.price * 0.02;
+          const monthlyEarn = pkg.price * 0.60;
+          
+          let category = 'starter';
+          if (pkg.price >= 500 && pkg.price <= 1000) category = 'pro';
+          else if (pkg.price > 1000) category = 'institutional';
+        %>
+        <div class="package-card <%= isPopular ? 'highlight' : '' %>" data-category="<%= category %>" data-price="<%= pkg.price %>">
+          <% if (isPopular) { %>
+            <div class="package-badge-top">Most Popular</div>
+          <% } %>
+
+          <div>
+            <div class="package-tier-tag">
+              <%= pkg.code %>
+            </div>
+            <h3 class="package-name"><%= pkg.name %></h3>
+            
+            <div class="package-price">
+              $<%= pkg.price.toLocaleString('en-US') %>
+              <span>USDT</span>
+            </div>
+
+            <div class="package-yield-banner">
+              <div>
+                <div class="package-yield-sub">Daily 2.0% Profit</div>
+                <div class="package-yield-val">+$<%= dailyEarn.toFixed(2) %>/d</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="package-yield-sub">30-Day Return</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: var(--c-mint);">$<%= monthlyEarn.toFixed(2) %></div>
+              </div>
+            </div>
+
+            <div class="package-return-grid">
+              <div>
+                <div class="return-item-label">Working Cap (3X)</div>
+                <div class="return-item-val" style="color: var(--c-mint);">$<%= (pkg.price * 3).toLocaleString('en-US') %></div>
+              </div>
+              <div>
+                <div class="return-item-label">Investor Cap (2X)</div>
+                <div class="return-item-val" style="color: var(--c-lime);">$<%= (pkg.price * 2).toLocaleString('en-US') %></div>
+              </div>
+            </div>
+
+            <ul class="package-features">
+              <li>
+                <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                <span><strong>2.0%</strong> Automated Daily Profit</span>
+              </li>
+              <li>
+                <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                <span><strong>5-Level</strong> Referral (5%, 2%, 1%, 1%, 1%)</span>
+              </li>
+              <li>
+                <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                <span>20-Level ROI Residuals Eligible</span>
+              </li>
+              <li>
+                <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                <span>100% Volume for Weekly Salaries</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Purchase Action Button: If logged in -> /packages, If not logged in -> /login?redirect=/packages -->
+          <div style="margin-top: 1.5rem;">
+            <% if (typeof user !== 'undefined' && user) { %>
+              <a href="/packages" class="btn <%= isPopular ? 'btn-primary' : 'btn-outline' %> btn-block">
+                <span>Purchase Package &bull; $<%= pkg.price.toLocaleString('en-US') %> USDT</span>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </a>
+            <% } else { %>
+              <a href="/login?redirect=/packages" class="btn <%= isPopular ? 'btn-primary' : 'btn-outline' %> btn-block">
+                <span>Purchase Package &bull; $<%= pkg.price.toLocaleString('en-US') %> USDT</span>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </a>
+            <% } %>
+          </div>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-secondary);">
+        No active packages currently available. Please check back shortly.
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  // Filter Tabs Client Logic
+  document.addEventListener('DOMContentLoaded', () => {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.package-card[data-category]');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => {
+          b.style.background = '#0c1214';
+          b.style.color = 'var(--text-secondary)';
+          b.classList.remove('active');
+        });
+        btn.style.background = 'var(--c-mint)';
+        btn.style.color = '#000';
+        btn.classList.add('active');
+
+        const filter = btn.getAttribute('data-filter');
+        cards.forEach(card => {
+          if (filter === 'all' || card.getAttribute('data-category') === filter) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

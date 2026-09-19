@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <style>
+    .profit-overview-card {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(15, 23, 27, 0.95) 100%);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+    .profit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .profit-main-val {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #00F0FF;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      text-shadow: 0 0 24px rgba(0, 240, 255, 0.25);
+    }
+    .profit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .profit-stream-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .profit-stream-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 240, 255, 0.35);
+    }
+    .profit-stream-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .profit-stream-val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .quick-pct-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .quick-pct-btn:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: #00F0FF;
+      color: #00F0FF;
+    }
+    .readonly-box {
+      background: #080C0D;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #00F0FF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'Withdraw Profits (USDT BEP-20)' }) %>
+
+      <main class="dashboard-content">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger" style="margin-bottom: 1.5rem;"><%= error %></div>
+        <% } %>
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success" style="margin-bottom: 1.5rem;"><%= success %></div>
+        <% } %>
+
+        <!-- Available Withdrawable Profit Hero Overview -->
+        <div class="profit-overview-card">
+          <div class="profit-header">
+            <div>
+              <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.35rem;">
+                Withdrawable Earnings Protocol
+              </div>
+              <div class="profit-main-val">
+                $<span id="liveAvailableProfit"><%= withdrawableProfit.toFixed(2) %></span> <span style="font-size: 1.2rem; color: #26A17B;">USDT</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.35rem;">
+                Withdrawable from earned profits only (ROI, Referral, Level, Salary). Deposit capital principal remains dedicated to your active contracts.
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-success" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                ✓ Profit-Only Disbursal Active
+              </span>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.45rem;">
+                Protocol Fee: <strong><%= limits.feePct %>%</strong> &bull; Min: <strong>$<%= limits.min.toFixed(2) %> USDT</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Breakdown of 4 Distinct Profit Streams -->
+          <div class="profit-grid">
+            <div class="profit-stream-card">
+              <div class="profit-stream-label">
+                <span>💎</span> Package Daily ROI
+              </div>
+              <div class="profit-stream-val text-mint">
+                $<%= wallet.roi_balance.toFixed(2) %>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">2% Automated Daily Yield</div>
+            </div>
+
+            <div class="profit-stream-card">
+              <div class="profit-stream-label">
+                <span>🤝</span> Referral Commission
+              </div>
+              <div class="profit-stream-val text-mint">
+                $<%= wallet.referral_balance.toFixed(2) %>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Direct Referral Rewards</div>
+            </div>
+
+            <div class="profit-stream-card">
+              <div class="profit-stream-label">
+                <span>🌐</span> Level Income
+              </div>
+              <div class="profit-stream-val text-mint">
+                $<%= wallet.level_balance.toFixed(2) %>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">20-Level ROI Residuals</div>
+            </div>
+
+            <div class="profit-stream-card">
+              <div class="profit-stream-label">
+                <span>💼</span> Leadership Salary
+              </div>
+              <div class="profit-stream-val text-mint">
+                $<%= wallet.salary_balance.toFixed(2) %>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Weekly Target Bonus</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-bottom: 2rem;">
+          <!-- Left Column: Withdrawal Request Form -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <span>Request Profit Withdrawal</span>
+              </div>
+              <span class="badge badge-success">Fee: <%= limits.feePct %>%</span>
+            </div>
+
+            <% if (!userVerifiedWallet || !userVerifiedWallet.isVerified) { %>
+              <!-- Wallet Not Connected Warning -->
+              <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.5rem; text-align: center;">
+                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔒</div>
+                <div style="font-weight: 700; color: #FFFFFF; font-size: 1rem; margin-bottom: 0.35rem;">Web3 Wallet Connection Required</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                  For security and fraud prevention, withdrawal destinations are strictly locked to your cryptographically verified EVM wallet on BNB Smart Chain.
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-connect-for-wd">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  <span>Connect & Verify Wallet</span>
+                </button>
+              </div>
+            <% } %>
+
+            <form action="/withdraw" method="POST" id="withdrawForm">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+              <!-- Profit Source Selection -->
+              <div class="form-group">
+                <label class="form-label">Withdraw From Profit Source</label>
+                <select name="profitSource" id="profitSourceSelect" class="form-select" style="background: #080C0D;">
+                  <option value="PROFIT" data-max="<%= withdrawableProfit %>" selected>
+                    ⚡ Combined Withdrawable Profit ($<%= withdrawableProfit.toFixed(2) %> USDT)
+                  </option>
+                  <option value="ROI" data-max="<%= wallet.roi_balance %>">
+                    💎 Package ROI Profit only ($<%= wallet.roi_balance.toFixed(2) %> USDT)
+                  </option>
+                  <option value="REFERRAL" data-max="<%= wallet.referral_balance %>">
+                    🤝 Referral Commission only ($<%= wallet.referral_balance.toFixed(2) %> USDT)
+                  </option>
+                  <option value="LEVEL" data-max="<%= wallet.level_balance %>">
+                    🌐 Level Income only ($<%= wallet.level_balance.toFixed(2) %> USDT)
+                  </option>
+                  <option value="SALARY" data-max="<%= wallet.salary_balance %>">
+                    💼 Salary Income only ($<%= wallet.salary_balance.toFixed(2) %> USDT)
+                  </option>
+                </select>
+              </div>
+
+              <!-- Withdrawal Amount Input & Quick Fill Buttons -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <label class="form-label" style="margin-bottom: 0;">Withdrawal Amount ($ USDT) *</label>
+                  <div style="display: flex; gap: 0.35rem;">
+                    <button type="button" class="quick-pct-btn" data-pct="0.25">25%</button>
+                    <button type="button" class="quick-pct-btn" data-pct="0.50">50%</button>
+                    <button type="button" class="quick-pct-btn" data-pct="0.75">75%</button>
+                    <button type="button" class="quick-pct-btn" data-pct="1.00" style="border-color: #00F0FF; color: #00F0FF;">Max</button>
+                  </div>
+                </div>
+                <input type="number" step="0.01" min="<%= limits.min %>" max="<%= withdrawableProfit %>" name="amount" id="wdAmountInput" class="form-input" placeholder="Min $<%= limits.min %>" required>
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.35rem;">
+                  <span>Min: $<%= limits.min.toFixed(2) %> USDT</span>
+                  <span>Max: $<span id="currentMaxDisplay"><%= withdrawableProfit.toFixed(2) %></span> USDT</span>
+                </div>
+              </div>
+
+              <!-- Real-time Over-limit Alert -->
+              <div id="overLimitAlert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid #EF4444; border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #FCA5A5;">
+                <strong>⚠️ Amount Exceeds Withdrawable Profit:</strong><br>
+                You entered <span id="warnAmount" style="color: #FFFFFF; font-weight: 700;">$0.00</span> USDT, but your available limit is <span id="warnLimit" style="color: #00F0FF; font-weight: 700;">$0.00</span> USDT.
+              </div>
+
+              <!-- Live Dynamic Fee Calculation Preview -->
+              <div style="background: #080C0D; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                  <span>Requested Gross Amount:</span>
+                  <span id="previewGross" class="mono">$0.00 USDT</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #EF4444; margin-bottom: 0.35rem;">
+                  <span>Server Processing Fee (<%= limits.feePct %>%):</span>
+                  <span id="previewFee" class="mono">-$0.00 USDT</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: 800; color: #00F0FF; border-top: 1px solid var(--border-subtle); padding-top: 0.45rem;">
+                  <span>Exact Net Disbursed:</span>
+                  <span id="previewNet" class="mono">$0.00 USDT</span>
+                </div>
+              </div>
+
+              <!-- STRICT READ-ONLY DESTINATION ADDRESS (Section 17 & 18) -->
+              <div class="form-group">
+                <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>Destination Address (Locked to Verified Wallet)</span>
+                  <span class="badge badge-success" style="font-size: 0.7rem;">Read-Only &bull; Non-Editable</span>
+                </label>
+
+                <% if (userVerifiedWallet && userVerifiedWallet.isVerified) { %>
+                  <div class="readonly-box">
+                    <span><%= userVerifiedWallet.walletAddress %></span>
+                    <a href="https://bscscan.com/address/<%= userVerifiedWallet.walletAddress %>" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--text-secondary); text-decoration: underline; margin-left: 0.5rem;">
+                      BscScan ↗
+                    </a>
+                  </div>
+                <% } else { %>
+                  <div style="background: #080C0D; border: 1px dashed rgba(245, 158, 11, 0.5); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.85rem; color: #F59E0B; text-align: center;">
+                    ⚠️ Connect and verify your Web3 wallet above to unlock withdrawals.
+                  </div>
+                <% } %>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+                  Funds are disbursed directly to this address upon Administrator approval. Custom address typing is disabled for account security.
+                </div>
+              </div>
+
+              <button type="submit" id="btnSubmitWithdrawal" class="btn btn-primary btn-block btn-lg" <%= (!userVerifiedWallet || !userVerifiedWallet.isVerified || withdrawableProfit < limits.min) ? 'disabled' : '' %>>
+                <%= (!userVerifiedWallet || !userVerifiedWallet.isVerified) 
+                  ? 'Connect Wallet to Withdraw' 
+                  : (withdrawableProfit < limits.min ? `Min $${limits.min} USDT Profit Required` : 'Submit Profit Withdrawal Request') %>
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Policy & Governance Card -->
+          <div class="card" style="background: var(--grad-card); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="card-title">
+                  <span>Withdrawal Rules & Lifecycle</span>
+                </div>
+                <span class="badge badge-success">BSC Mainnet</span>
+              </div>
+
+              <ul style="list-style: none; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.8; padding: 0;">
+                <li style="margin-bottom: 0.75rem;">
+                  <strong style="color: #FFFFFF;">1. Profit-Only Disbursal:</strong> Withdrawals are drawn strictly from realized profits (ROI, Referral, Level, Salary). Capital principal is dedicated to contract generation.
+                </li>
+                <li style="margin-bottom: 0.75rem;">
+                  <strong style="color: #FFFFFF;">2. Flat 10% Fee:</strong> A 10% server-calculated fee is deducted. The exact net amount is signed and sent on-chain.
+                </li>
+                <li style="margin-bottom: 0.75rem;">
+                  <strong style="color: #FFFFFF;">3. Mandatory Admin Approval:</strong> Every withdrawal creates a <code>PENDING_ADMIN_APPROVAL</code> record and reserves your internal balance. The admin signs and broadcasts via the platform signer.
+                </li>
+                <li style="margin-bottom: 0.75rem;">
+                  <strong style="color: #FFFFFF;">4. Destination Lock:</strong> Outgoing transfers go exclusively to your connected verified EVM wallet. If you change your wallet while a request is pending, the request is marked <code>REVIEW_REQUIRED</code> for safety.
+                </li>
+                <li style="margin-bottom: 0.75rem;">
+                  <strong style="color: #FFFFFF;">5. Limits:</strong> Minimum: <strong>$<%= limits.min.toFixed(2) %> USDT</strong> &bull; Maximum: <strong>$<%= limits.max.toLocaleString() %> USDT</strong>.
+                </li>
+              </ul>
+            </div>
+
+            <div class="alert alert-info" style="margin-bottom: 0; background: rgba(0, 240, 255, 0.08); border-color: rgba(0, 240, 255, 0.25);">
+              Total Profit Withdrawn to Date: <strong>$<%= (wallet.total_withdrawn || 0).toFixed(2) %> USDT</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Withdrawal Request History Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>Withdrawal Request History</span>
+            </div>
+            <span class="badge badge-success">USDT (BEP-20)</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Requested Amount</th>
+                  <th>Fee (<%= limits.feePct %>%)</th>
+                  <th>Net Payout</th>
+                  <th>Source</th>
+                  <th>Destination Address</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (withdrawals && withdrawals.length > 0) { %>
+                  <% withdrawals.forEach(w => { %>
+                    <tr>
+                      <td class="mono" style="color: #00F0FF; font-weight: 700;"><%= w.withdrawal_code %></td>
+                      <td style="font-weight: 700;">$<%= Number(w.requested_amount).toFixed(2) %></td>
+                      <td style="color: #EF4444;">-$<%= Number(w.fee_amount).toFixed(2) %></td>
+                      <td><strong style="color: #10B981;">$<%= Number(w.net_amount).toFixed(2) %></strong></td>
+                      <td>
+                        <span class="badge badge-info" style="font-size: 0.72rem;">
+                          <%= w.wallet_type || 'PROFIT' %>
+                        </span>
+                      </td>
+                      <td class="mono" style="font-size: 0.8rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <% if (w.account_details && w.account_details.startsWith('0x')) { %>
+                          <a href="https://bscscan.com/address/<%= w.account_details %>" target="_blank" rel="noopener noreferrer" style="color: #00F0FF; text-decoration: underline;" title="<%= w.account_details %>">
+                            <%= w.account_details.slice(0, 8) %>...<%= w.account_details.slice(-6) %> ↗
+                          </a>
+                        <% } else { %>
+                          <%= w.account_details %>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% 
+                          let badgeClass = 'badge-warning';
+                          if (w.status === 'COMPLETED' || w.status === 'APPROVED') badgeClass = 'badge-success';
+                          else if (w.status === 'REJECTED' || w.status === 'FAILED') badgeClass = 'badge-error';
+                          else if (w.status === 'REVIEW_REQUIRED') badgeClass = 'badge-error';
+                        %>
+                        <span class="badge <%= badgeClass %>">
+                          <%= w.status %>
+                        </span>
+                        <% if (w.tx_hash) { %>
+                          <div style="margin-top: 0.25rem; font-size: 0.72rem;">
+                            <a href="https://bscscan.com/tx/<%= w.tx_hash %>" target="_blank" rel="noopener noreferrer" style="color: #00F0FF; text-decoration: underline;">
+                              TxID ↗
+                            </a>
+                          </div>
+                        <% } %>
+                      </td>
+                      <td style="font-size: 0.8rem; color: var(--text-muted);"><%= new Date(w.created_at).toLocaleString() %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2.5rem;">No withdrawal requests found.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/finvora-web3.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const amountInput = document.getElementById('wdAmountInput');
+      const sourceSelect = document.getElementById('profitSourceSelect');
+      const maxDisplay = document.getElementById('currentMaxDisplay');
+      const overLimitAlert = document.getElementById('overLimitAlert');
+      const warnAmount = document.getElementById('warnAmount');
+      const warnLimit = document.getElementById('warnLimit');
+      const submitBtn = document.getElementById('btnSubmitWithdrawal');
+      const btnConnectWd = document.getElementById('btn-connect-for-wd');
+      const feePct = <%= limits.feePct %>;
+      const minLimit = <%= limits.min %>;
+      const isWalletConnected = <%= Boolean(userVerifiedWallet && userVerifiedWallet.isVerified) %>;
+
+      function getCurrentMax() {
+        if (!sourceSelect) return <%= withdrawableProfit %>;
+        const opt = sourceSelect.options[sourceSelect.selectedIndex];
+        return parseFloat(opt.getAttribute('data-max')) || 0;
+      }
+
+      function updateCalculations() {
+        const currentMax = getCurrentMax();
+        if (maxDisplay) maxDisplay.textContent = currentMax.toFixed(2);
+        if (amountInput) amountInput.max = currentMax;
+
+        const val = parseFloat(amountInput?.value) || 0;
+        const fee = (val * feePct) / 100;
+        const net = Math.max(0, val - fee);
+
+        document.getElementById('previewGross').textContent = '$' + val.toFixed(2) + ' USDT';
+        document.getElementById('previewFee').textContent = '-$' + fee.toFixed(2) + ' USDT';
+        document.getElementById('previewNet').textContent = '$' + net.toFixed(2) + ' USDT';
+
+        if (val > currentMax && val > 0) {
+          if (overLimitAlert) overLimitAlert.style.display = 'block';
+          if (warnAmount) warnAmount.textContent = '$' + val.toFixed(2);
+          if (warnLimit) warnLimit.textContent = '$' + currentMax.toFixed(2);
+          if (submitBtn) submitBtn.disabled = true;
+        } else {
+          if (overLimitAlert) overLimitAlert.style.display = 'none';
+          if (submitBtn) {
+            submitBtn.disabled = (!isWalletConnected || val < minLimit || currentMax < minLimit);
+          }
+        }
+      }
+
+      if (amountInput) amountInput.addEventListener('input', updateCalculations);
+      if (sourceSelect) sourceSelect.addEventListener('change', updateCalculations);
+
+      // Quick Percentage Buttons
+      document.querySelectorAll('.quick-pct-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pct = parseFloat(btn.getAttribute('data-pct')) || 1.0;
+          const currentMax = getCurrentMax();
+          const computed = Math.floor(currentMax * pct * 100) / 100;
+          if (amountInput) {
+            amountInput.value = computed > 0 ? computed.toFixed(2) : '';
+            updateCalculations();
+          }
+        });
+      });
+
+      // Connect Wallet button handler
+      if (btnConnectWd) {
+        btnConnectWd.addEventListener('click', async () => {
+          btnConnectWd.disabled = true;
+          btnConnectWd.innerHTML = '<span>Connecting...</span>';
+          try {
+            await window.finvoraWeb3.connectAndVerify({ role: 'user' });
+            window.location.reload();
+          } catch (err) {
+            alert('Wallet connection failed: ' + err.message);
+            btnConnectWd.disabled = false;
+            btnConnectWd.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span>Connect & Verify Wallet</span>';
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

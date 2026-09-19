@@ -1,0 +1,135 @@
+<aside class="dashboard-sidebar">
+  <div class="sidebar-header">
+    <a href="/dashboard" class="brand-logo">
+      <img src="/assets/logo.svg" alt="FINVORA">
+    </a>
+    <button type="button" class="sidebar-close-btn" aria-label="Close Navigation Sidebar">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+    </button>
+  </div>
+
+  <ul class="sidebar-nav">
+    <li class="sidebar-heading">Core</li>
+    <li class="sidebar-item">
+      <a href="/dashboard" class="sidebar-link <%= currentPath === '/dashboard' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        <span>Overview</span>
+      </a>
+    </li>
+
+    <li class="sidebar-heading">Investment</li>
+    <li class="sidebar-item">
+      <a href="/packages" class="sidebar-link <%= currentPath === '/packages' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <span>Packages Store</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/my-investments" class="sidebar-link <%= currentPath === '/my-investments' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+        <span>My Investments</span>
+      </a>
+    </li>
+
+    <li class="sidebar-heading">Affiliate & Network</li>
+    <li class="sidebar-item">
+      <a href="/my-referrals" class="sidebar-link <%= currentPath === '/my-referrals' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        <span>Direct Referrals</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/genealogy" class="sidebar-link <%= currentPath === '/genealogy' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+        <span>Genealogy Tree</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/level-income" class="sidebar-link <%= currentPath === '/level-income' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span>Level Income</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/referral-income" class="sidebar-link <%= currentPath === '/referral-income' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Referral Income</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/salary" class="sidebar-link <%= currentPath === '/salary' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <span>Salary Leadership</span>
+      </a>
+    </li>
+
+    <li class="sidebar-heading">Financials</li>
+    <li class="sidebar-item">
+      <a href="/wallet" class="sidebar-link <%= currentPath === '/wallet' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+        <span>My Wallets</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/deposit" class="sidebar-link <%= currentPath === '/deposit' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+        <span>Deposit</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/withdraw" class="sidebar-link <%= currentPath === '/withdraw' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        <span>Withdraw</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/transactions" class="sidebar-link <%= currentPath === '/transactions' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+        <span>Transactions</span>
+      </a>
+    </li>
+
+    <li class="sidebar-heading">Account</li>
+    <li class="sidebar-item">
+      <a href="/profile" class="sidebar-link <%= currentPath === '/profile' ? 'active' : '' %>">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        <span>Profile & Security</span>
+      </a>
+    </li>
+    <li class="sidebar-item">
+      <a href="/logout" class="sidebar-link text-error">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        <span>Sign Out</span>
+      </a>
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <div class="user-badge-card">
+      <div class="user-avatar"><%= user.username.charAt(0).toUpperCase() %></div>
+      <div class="user-info">
+        <div class="user-name"><%= user.username %></div>
+        <div class="user-type-tag" style="display: flex; align-items: center; gap: 0.35rem;">
+          <% if (user.user_type === 'WORKING') { %>
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--c-mint);"></span>
+            <span>Working ID (3X) &bull; <%= user.user_code %></span>
+          <% } else if (user.user_type === 'INVESTOR') { %>
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--c-lime);"></span>
+            <span>Investor ID (2X) &bull; <%= user.user_code %></span>
+          <% } else if (user.user_type === 'SUSPENDED') { %>
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--c-error);"></span>
+            <span>Suspended &bull; <%= user.user_code %></span>
+          <% } else { %>
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #38BDF8;"></span>
+            <span>Active ID &bull; <%= user.user_code %></span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+<script src="/js/mobile-nav.js" defer></script>
+<script src="/js/confirm-modal.js" defer></script>
+

@@ -1,0 +1,74 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 4rem 1.5rem 6rem;">
+  <div class="section-header" style="margin-bottom: 3.5rem;">
+    <div class="badge badge-success" style="margin-bottom: 0.75rem;">Leadership Target Program</div>
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">Weekly <span class="grad-text">Salary Plan</span></h1>
+    <p class="text-secondary" style="font-size: 1.1rem;">
+      Achieve direct business milestones to qualify for weekly leadership salaries paid for 25 consecutive weeks.
+    </p>
+  </div>
+
+  <!-- Key Salary Engine Rules Banner -->
+  <div class="grid grid-2" style="margin-bottom: 3.5rem;">
+    <div class="card" style="border-color: var(--c-teal);">
+      <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; color: var(--c-mint);">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        Single Active Salary Level Rule
+      </h3>
+      <p class="text-secondary" style="font-size: 0.95rem;">
+        When the first salary target becomes active, achieving the next salary target immediately <strong>stops the previous salary level</strong> and activates the higher salary tier. Only one salary level is active at any time, initiating a fresh 25-week cycle.
+      </p>
+    </div>
+
+    <div class="card" style="border-color: var(--c-green);">
+      <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; color: var(--c-green);">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Incremental Direct Business Accounting
+      </h3>
+      <p class="text-secondary" style="font-size: 0.95rem;">
+        Direct business is accounted incrementally. For example, once $1,000 direct business is achieved for Tier 1, reaching the Tier 2 ($3,000) target requires only <strong>$2,000 additional qualifying direct business</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Salary Targets Table -->
+  <div class="card" style="padding: 2.5rem;">
+    <div class="card-header">
+      <div class="card-title">
+        <span>10 Leadership Salary Tiers</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tier Level</th>
+            <th>Required Direct Business</th>
+            <th>Weekly Salary</th>
+            <th>Duration</th>
+            <th>Total Payout Potential</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof salaryTargets !== 'undefined' && salaryTargets.length > 0) { %>
+            <% salaryTargets.forEach((st, idx) => { %>
+              <tr>
+                <td><strong><%= st.target_name %></strong></td>
+                <td><strong>$<%= st.required_direct_business.toLocaleString() %></strong></td>
+                <td><span class="text-success" style="font-weight: 700; font-size: 1.05rem;">$<%= st.weekly_amount.toLocaleString() %> / week</span></td>
+                <td><%= st.duration_weeks %> Weeks</td>
+                <td><strong class="grad-text">$<%= (st.weekly_amount * st.duration_weeks).toLocaleString() %></strong></td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="5" class="text-secondary">Loading salary tiers...</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

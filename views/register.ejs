@@ -1,0 +1,209 @@
+<%- include('partials/header', { useThree: true }) %>
+
+<style>
+  .auth-wrapper {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+
+  .auth-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    max-width: 1100px;
+    width: 100%;
+    background: var(--grad-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(55, 165, 161, 0.1);
+  }
+
+  .auth-visual-panel {
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, rgba(13, 108, 159, 0.2) 0%, rgba(5, 5, 5, 0.95) 80%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3.5rem 3rem;
+    border-right: 1px solid var(--border-subtle);
+    overflow: hidden;
+  }
+
+  .auth-canvas-box {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    opacity: 0.85;
+  }
+
+  .auth-visual-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .auth-form-panel {
+    padding: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: rgba(12, 17, 19, 0.85);
+    backdrop-filter: blur(16px);
+  }
+
+  @media (max-width: 992px) {
+    .auth-grid {
+      grid-template-columns: 1fr;
+    }
+    .auth-visual-panel {
+      display: none;
+    }
+    .auth-form-panel {
+      padding: 2.5rem 1.8rem;
+    }
+  }
+</style>
+
+<div class="auth-wrapper">
+  <div class="auth-grid">
+    <!-- 3D Three.js Visual Showcase Side -->
+    <div class="auth-visual-panel">
+      <div class="auth-canvas-box">
+        <canvas id="three-auth-canvas"></canvas>
+      </div>
+
+      <div class="auth-visual-content">
+        <div class="badge badge-working" style="margin-bottom: 1.2rem;">
+          <span class="pulse-dot"></span>
+          <span>Global Membership Protocol</span>
+        </div>
+        <h2 style="font-size: 2.2rem; line-height: 1.2; margin-bottom: 1rem;">
+          Join the Global <span class="grad-text">FINVORA Network</span>
+        </h2>
+        <p class="text-secondary" style="font-size: 0.95rem; line-height: 1.6; max-width: 380px;">
+          Choose between Working Partner (3X Multiplier) or Investor (2X Multiplier) to unlock automated daily 2% returns, 10% direct referral bonuses, and weekly leadership salaries.
+        </p>
+      </div>
+
+      <div class="auth-visual-content">
+        <div style="background: rgba(8, 12, 14, 0.8); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: var(--c-mint);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span style="font-weight: 700; font-size: 0.9rem;">100% Immutable Ledger</span>
+          </div>
+          <p class="text-secondary" style="font-size: 0.8rem; line-height: 1.5;">
+            Double-entry accounting guarantees verifiable solvency, instant deposits, and scheduled automated payouts.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registration Form Side -->
+    <div class="auth-form-panel">
+      <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.85rem;">Create Client <span class="grad-text">Account</span></h2>
+        <p class="text-secondary" style="font-size: 0.9rem; margin-top: 0.35rem;">Enter your information to establish your financial node</p>
+      </div>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <form action="/register" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <!-- Sponsor Referral ID -->
+        <div class="form-group">
+          <label class="form-label">Sponsor / Referral ID *</label>
+          <input type="text" name="sponsor" class="form-input mono" 
+                 placeholder="Sponsor username or code" 
+                 value="<%= typeof sponsorRef !== 'undefined' ? sponsorRef : '' %>" required>
+          <% if (typeof sponsorName !== 'undefined' && sponsorName) { %>
+            <div style="font-size: 0.8rem; color: var(--c-mint); margin-top: 0.35rem; font-weight: 600;">
+              ✓ Sponsoring Partner: <strong><%= sponsorName %></strong>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" name="fullName" class="form-input" placeholder="e.g. Robert Smith" required>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">Email Address * <span style="font-size: 0.75rem; color: var(--c-mint); font-weight: 500;">(Required for login)</span></label>
+            <input type="email" name="email" class="form-input" placeholder="name@example.com" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mobile Number <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">(No country code needed)</span></label>
+            <input type="tel" name="mobile" class="form-input" placeholder="e.g. 9876543210 (direct phone number)">
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">Password *</label>
+            <div class="password-input-group">
+              <input type="password" name="password" id="reg-password-input" class="form-input" placeholder="Min 6 characters" required>
+              <button type="button" class="password-toggle-btn" data-target="reg-password-input" aria-label="Show password" title="Show password">
+                <svg class="eye-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-off-icon" style="display: none;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Confirm Password *</label>
+            <div class="password-input-group">
+              <input type="password" name="confirmPassword" id="reg-confirm-password-input" class="form-input" placeholder="Repeat password" required>
+              <button type="button" class="password-toggle-btn" data-target="reg-confirm-password-input" aria-label="Show password" title="Show password">
+                <svg class="eye-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-off-icon" style="display: none;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 0.5rem;">
+          <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+            <input type="checkbox" name="terms" value="1" required style="margin-top: 0.25rem;">
+            <span>I agree to the <a href="/terms" target="_blank" style="color: var(--c-mint);">Terms of Service</a>, <a href="/privacy" target="_blank" style="color: var(--c-mint);">Privacy Policy</a>, and acknowledge the <a href="/risk-disclosure" target="_blank" style="color: var(--c-mint);">Risk Disclosure</a>.</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.5rem;">
+          <span>Register Financial Node</span>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
+      </form>
+
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <span class="text-secondary" style="font-size: 0.88rem;">Already have an account?</span>
+        <a href="/login" style="color: var(--c-mint); font-weight: 700; font-size: 0.88rem; margin-left: 0.35rem;">Sign In</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/three-scene.js"></script>
+<script src="/js/password-toggle.js"></script>
+
+<%- include('partials/footer') %>

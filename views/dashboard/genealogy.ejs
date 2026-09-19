@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <%- include('../partials/dashboard-sidebar') %>
+
+    <div class="dashboard-main">
+      <%- include('../partials/dashboard-topbar', { pageTitle: 'Genealogy Network' }) %>
+
+      <main class="dashboard-content">
+        <!-- Network Metrics -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-title">Direct Referrals</div>
+            <div class="kpi-value grad-text"><%= downlineSummary.totalDirects %></div>
+            <div class="kpi-sub"><%= downlineSummary.activeDirects %> active</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Total Downline Team</div>
+            <div class="kpi-value"><%= downlineSummary.totalTeam %></div>
+            <div class="kpi-sub"><%= downlineSummary.activeTeam %> active &bull; <%= downlineSummary.inactiveTeam %> inactive</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Direct Volume</div>
+            <div class="kpi-value text-success">$<%= downlineSummary.directBusiness.toFixed(2) %></div>
+            <div class="kpi-sub">Direct business volume</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Unlocked Levels</div>
+            <div class="kpi-value text-cyan"><%= downlineSummary.unlockedLevels %> / 20</div>
+            <div class="kpi-sub">1 Direct = 1 Level Rule</div>
+          </div>
+        </div>
+
+        <!-- Visual Genealogy Tree Canvas Card -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+              <span>Interactive Sponsor Hierarchy Tree</span>
+            </div>
+            <span class="badge badge-working">Visual Tree (Depth: 3)</span>
+          </div>
+
+          <div class="genealogy-tree-container">
+            <div id="interactive-tree-root"></div>
+          </div>
+        </div>
+
+        <!-- 20-Level Network Explorer Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>20-Level Network Status Breakdown</span>
+            </div>
+            <span class="badge badge-success">Dynamic Unlocks</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tier Level</th>
+                  <th>Required Directs</th>
+                  <th>Your Status</th>
+                  <th>Commission Rate</th>
+                  <th>Downline Members</th>
+                  <th>Active Members</th>
+                  <th>Level Turnover ($)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (levelStatus && levelStatus.length > 0) { %>
+                  <% levelStatus.forEach(lvl => { %>
+                    <% 
+                      const stat = downlineSummary.levelStats.find(s => s.level === lvl.level);
+                      const membersCount = stat ? stat.count : 0;
+                      const activeCount = stat ? stat.activeCount : 0;
+                      const business = stat ? stat.business : 0;
+                    %>
+                    <tr>
+                      <td><strong>Level <%= lvl.level %></strong></td>
+                      <td><%= lvl.requiredDirects %> Active Directs</td>
+                      <td>
+                        <span class="badge <%= lvl.isUnlocked ? 'badge-success' : 'badge-error' %>">
+                          <%= lvl.isUnlocked ? '✓ UNLOCKED' : 'LOCKED' %>
+                        </span>
+                      </td>
+                      <td class="text-success"><strong><%= lvl.commissionPct %>%</strong></td>
+                      <td><%= membersCount %> Members</td>
+                      <td><%= activeCount %> Active</td>
+                      <td style="font-weight: 700; color: var(--c-mint);">$<%= business.toFixed(2) %></td>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/genealogy.js"></script>
+</body>
+</html>
