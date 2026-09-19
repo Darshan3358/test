@@ -39,6 +39,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+// Ensure MongoDB connection is ready for every request (essential for serverless cold starts)
+app.use(async (req, res, next) => {
+  try {
+    await connectMongo();
+    next();
+  } catch (err) {
+    console.error('[Serverless DB Connect Error]', err);
+    return res.status(500).send('Database connection error. Please try again.');
+  }
+});
+
 // Security & session context
 app.use(sessionContext);
 app.use(csrfProtection);

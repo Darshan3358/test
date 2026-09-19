@@ -1,4 +1,4 @@
-const { db, query, get, run } = require('../database/db');
+const { getDb } = require('../database/mongo');
 
 class LevelUnlockService {
   /**
@@ -6,29 +6,44 @@ class LevelUnlockService {
    * Rule: 1 Direct Referral = 1 Level Unlock (up to max 20 levels).
    * 
    * @param {number} userId
-   * @returns {{ directCount: number, unlockedLevels: number }}
+   * @returns {Promise<{ directCount: number, unlockedLevels: number }>}
    */
-  static recalculate(userId) {
-    // Count active direct referrals who have at least one active investment
-    // Or users who have registered and purchased a package
-    const row = get(`
-      SELECT COUNT(DISTINCT u.id) as direct_count
-      FROM users u
-      INNER JOIN investments inv ON inv.user_id = u.id
-      WHERE u.sponsor_id = ? AND u.status = 'ACTIVE'
-    `, [userId]);
+  static async recalculate(userId) {
+    const db = getDb();
+    const uid = Number(userId);
 
-    const directCount = row ? Number(row.direct_count) : 0;
+    // Find active direct referrals
+    const directs = await db.collection('users').find({
+      sponsor_id: uid,
+      status: 'ACTIVE'
+    }).toArray();
+
+    const directIds = directs.map(d => d.id !== undefined ? d.id : d.sqlite_id).filter(Boolean);
+    let directCount = 0;
+
+    if (directIds.length > 0) {
+      const activeInvs = await db.collection('investments').find({
+        user_id: { $in: directIds },
+        status: 'ACTIVE'
+      }).toArray();
+      const uniqueInvestors = new Set(activeInvs.map(i => i.user_id));
+      directCount = uniqueInvestors.size;
+    }
+
     const unlockedLevels = Math.min(20, directCount);
 
-    run(`
-      INSERT INTO level_unlocks (user_id, direct_count, unlocked_levels, updated_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(user_id) DO UPDATE SET
-        direct_count = excluded.direct_count,
-        unlocked_levels = excluded.unlocked_levels,
-        updated_at = CURRENT_TIMESTAMP
-    `, [userId, directCount, unlockedLevels]);
+    await db.collection('level_unlocks').updateOne(
+      { user_id: uid },
+      {
+        $set: {
+          user_id: uid,
+          direct_count: directCount,
+          unlocked_levels: unlockedLevels,
+          updated_at: new Date()
+        }
+      },
+      { upsert: true }
+    );
 
     return { directCount, unlockedLevels };
   }
@@ -38,12 +53,14 @@ class LevelUnlockService {
    * 
    * @param {number} userId
    * @param {number} levelNumber (1 to 20)
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    */
-  static isLevelUnlocked(userId, levelNumber) {
-    let unlock = get('SELECT unlocked_levels FROM level_unlocks WHERE user_id = ?', [userId]);
+  static async isLevelUnlocked(userId, levelNumber) {
+    const db = getDb();
+    const uid = Number(userId);
+    let unlock = await db.collection('level_unlocks').findOne({ user_id: uid });
     if (!unlock) {
-      const rec = this.recalculate(userId);
+      const rec = await this.recalculate(userId);
       return rec.unlockedLevels >= levelNumber;
     }
     return Number(unlock.unlocked_levels) >= levelNumber;
@@ -53,17 +70,19 @@ class LevelUnlockService {
    * Get all level unlock details for user dashboard display
    * 
    * @param {number} userId
-   * @returns {Array<{ level: number, requiredDirects: number, currentDirects: number, isUnlocked: boolean }>}
+   * @returns {Promise<Array<{ level: number, requiredDirects: number, currentDirects: number, isUnlocked: boolean }>>}
    */
-  static getLevelStatus(userId) {
-    let unlock = get('SELECT direct_count, unlocked_levels FROM level_unlocks WHERE user_id = ?', [userId]);
+  static async getLevelStatus(userId) {
+    const db = getDb();
+    const uid = Number(userId);
+    let unlock = await db.collection('level_unlocks').findOne({ user_id: uid });
     if (!unlock) {
-      this.recalculate(userId);
-      unlock = get('SELECT direct_count, unlocked_levels FROM level_unlocks WHERE user_id = ?', [userId]);
+      await this.recalculate(userId);
+      unlock = await db.collection('level_unlocks').findOne({ user_id: uid });
     }
 
-    const currentDirects = unlock ? Number(unlock.direct_count) : 0;
-    const unlockedLevels = unlock ? Number(unlock.unlocked_levels) : 0;
+    const currentDirects = unlock ? Number(unlock.direct_count || 0) : 0;
+    const unlockedLevels = unlock ? Number(unlock.unlocked_levels || 0) : 0;
 
     const levels = [];
     const commissionRates = {
