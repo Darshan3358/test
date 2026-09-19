@@ -187,7 +187,7 @@ class GenealogyService {
       if (currentDepth >= maxDepth) return node;
 
       const children = await db.collection('users').find({
-        sponsor_id: uId,
+        $or: [{ sponsor_id: uId }, { sponsor_id: String(uId) }, { sponsor_id: Number(uId) }],
         status: { $ne: 'DELETED' }
       }).sort({ id: 1 }).toArray();
 

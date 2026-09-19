@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/v1/genealogy/tree')
     .then(res => res.json())
     .then(json => {
-      if (!json.success || !json.data) {
-        treeContainer.innerHTML = '<div class="text-muted" style="padding: 2.5rem;">No downline network records found. Share your referral link to build your team.</div>';
+      if (!json.success || !json.data || !json.data.username) {
+        treeContainer.innerHTML = '<div class="text-muted" style="padding: 2.5rem; text-align: center;">No downline network records found yet. Share your referral link to build your team.</div>';
         return;
       }
 
@@ -32,10 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => {
       console.error('Tree load error:', err);
-      treeContainer.innerHTML = '<div class="text-error" style="padding: 2rem;">Failed to load genealogy network.</div>';
+      treeContainer.innerHTML = '<div class="text-error" style="padding: 2rem; text-align: center;">Failed to load genealogy network.</div>';
     });
 
   function renderNode(nodeData, parentElement, depth) {
+    if (!nodeData) return;
+
     const nodeEl = document.createElement('div');
     nodeEl.className = 'tree-node-item';
     nodeEl.style.display = 'flex';
@@ -44,24 +46,30 @@ document.addEventListener('DOMContentLoaded', () => {
     nodeEl.style.position = 'relative';
 
     const card = document.createElement('div');
-    const isInvested = nodeData.invested > 0;
+    const investedAmt = Number(nodeData.invested || 0);
+    const isInvested = investedAmt > 0;
     card.className = `tree-node ${isInvested ? 'active-user' : ''}`;
     card.style.cursor = nodeData.children && nodeData.children.length > 0 ? 'pointer' : 'default';
 
+    const username = nodeData.username || nodeData.user_code || 'User';
+    const initial = username ? username.charAt(0).toUpperCase() : 'U';
+    const userCode = nodeData.user_code || '';
+    const userType = nodeData.user_type || 'ACTIVE';
+
     card.innerHTML = `
-      <div class="tree-node-avatar">${nodeData.username.charAt(0).toUpperCase()}</div>
-      <div class="tree-node-name">${escapeHtml(nodeData.username)}</div>
-      <div class="tree-node-code mono">${nodeData.user_code}</div>
+      <div class="tree-node-avatar">${initial}</div>
+      <div class="tree-node-name">${escapeHtml(username)}</div>
+      <div class="tree-node-code mono">${escapeHtml(userCode)}</div>
       <div style="display: flex; justify-content: center; gap: 0.35rem; margin: 0.35rem 0;">
-        <span class="badge ${nodeData.user_type === 'WORKING' ? 'badge-working' : 'badge-investor'}" style="font-size: 0.65rem;">
-          ${nodeData.user_type}
+        <span class="badge ${userType === 'WORKING' ? 'badge-working' : 'badge-investor'}" style="font-size: 0.65rem;">
+          ${userType}
         </span>
         <span class="badge ${isInvested ? 'badge-success' : 'badge-warning'}" style="font-size: 0.65rem;">
           ${isInvested ? 'ACTIVE' : 'FREE'}
         </span>
       </div>
       <div class="tree-node-stats mono">
-        Package: <strong>$${nodeData.invested.toFixed(0)}</strong>
+        Package: <strong>$${investedAmt.toFixed(0)}</strong>
       </div>
     `;
 
@@ -105,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function escapeHtml(str) {
+    if (!str) return '';
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
